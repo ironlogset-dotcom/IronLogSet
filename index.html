@@ -33,10 +33,10 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent;border:none;c
 .toast{position:fixed;top:calc(20px + var(--safe-t));left:50%;transform:translateX(-50%);background:rgba(12,12,22,.95);border:1px solid var(--border);border-radius:12px;padding:12px 24px;z-index:9999;backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,.5);animation:slideDown .3s ease}
 .toast span{font-size:14px;font-weight:700;color:var(--text)}
 .chart-bar{transition:height .5s ease}
-.rpe-slider{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;outline:none;background:linear-gradient(to right,#3dd68c 0%,#7de8b0 20%,#ffb800 40%,#ff8500 60%,#ff5533 75%,#ff3d3d 90%,#ff1a1a 100%);opacity:0.9}
-.rpe-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;transition:border-color .15s}
-.rpe-slider::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer}
-.rpe-slider::-webkit-slider-runnable-track{height:6px;border-radius:3px}
+.rpe-slider{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:4px;outline:none;background:linear-gradient(to right,#3dd68c 0%,#5ae0a0 15%,#7de8b0 25%,#ffb800 45%,#ffa200 55%,#ff8500 65%,#ff5533 78%,#ff3d3d 90%,#ff1a1a 100%);touch-action:none}
+.rpe-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;border:none;box-shadow:0 1px 4px rgba(0,0,0,.3),0 0 0 2px rgba(255,255,255,.15);cursor:pointer;margin-top:-10px}
+.rpe-slider::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:#fff;border:none;box-shadow:0 1px 4px rgba(0,0,0,.3),0 0 0 2px rgba(255,255,255,.15);cursor:pointer}
+.rpe-slider::-webkit-slider-runnable-track{height:8px;border-radius:4px}
 .ex-toolbar{display:flex;justify-content:center;gap:10px;padding:0 20px;opacity:0.5;transition:opacity .2s}
 .ex-toolbar:hover,.ex-toolbar:active{opacity:0.8}
 .ex-toolbar button{background:none;border:none;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:0.5px;padding:4px 8px}
@@ -662,117 +662,34 @@ function captureProgressPic(dayName){
 
 // ═══════════════════════════════════════════════════════════
 
-// {v: videoId, s: start seconds, e: end seconds} — trimmed to just the movement
-const EX_CLIPS={
-  pullups:{v:'eGo4IYlbE5g',s:50,e:60},weighted_pu:{v:'eGo4IYlbE5g',s:50,e:60},
-  lat_pulldown:{v:'CAwf7n6Luuc',s:53,e:63},cs_row:{v:'H75im9fAUMc',s:75,e:87},
-  bb_row:{v:'FWJR5Ve8bnQ',s:200,e:212},db_row:{v:'roCP6wCXPqo',s:49,e:59},
-  cable_row:{v:'GZbfZ033f74',s:188,e:199},sa_pulldown:{v:'lueEJGjTuPQ',s:106,e:116},
-  t_bar_row:{v:'j3Igk5nyZE4',s:143,e:154},chinups:{v:'brhRXlOhWMQ',s:2,e:12},
-  face_pull:{v:'rep-qVOkqgk',s:195,e:207},seal_row:{v:'yPis7GtOk-I',s:32,e:44},
-  meadows_row:{v:'rRBygsolWKg',s:60,e:70},rack_pull:{v:'V6JrsMBCJnQ',s:48,e:58},
-  db_bench:{v:'VmB1G1K7v94',s:46,e:57},bb_bench:{v:'rT7DgCr-3pg',s:95,e:106},
-  incline_db:{v:'8iPEnn-ltC8',s:84,e:96},incline_bb:{v:'SrqOu55lrYU',s:71,e:82},
-  decline_bench:{v:'LfyQBUKR8SE',s:91,e:102},cable_fly:{v:'taI4XduLpTk',s:94,e:105},
-  db_fly:{v:'eozdVDA78K0',s:62,e:73},chest_dip:{v:'2z8JmcrW-As',s:44,e:55},
-  machine_press:{v:'xUm0BiZCWlQ',s:64,e:74},pec_deck:{v:'4FPVFbPHdZk',s:32,e:42},
-  pushups:{v:'IODxDxX7oi4',s:170,e:180},landmine_press:{v:'Oy5VO7Bfy0Q',s:30,e:40},
-  db_ohp:{v:'qEwKCR5JCog',s:90,e:100},bb_ohp:{v:'2yjwXTZQDDI',s:132,e:144},
-  lat_raise:{v:'3VcKaXpzqRo',s:210,e:222},cable_lat_raise:{v:'PPrzBWZDOhA',s:45,e:55},
-  front_raise:{v:'-t7fuZ0KhDA',s:45,e:55},rear_delt_fly:{v:'EA7u4Q_8HQ0',s:63,e:73},
-  arnold_press:{v:'6Z15_WdXmVw',s:60,e:72},upright_row:{v:'amCU-ziHITM',s:56,e:66},
-  machine_ohp:{v:'Wqq43dKW1TU',s:40,e:50},shrugs:{v:'cJRVVxmytaM',s:76,e:86},
-  bb_curl:{v:'kwG2ipFRgfo',s:84,e:95},db_curl:{v:'ykJmrZ5v0Oo',s:106,e:116},
-  hammer_curl:{v:'zC3nLlEvin4',s:97,e:108},zottman_curl:{v:'ZrpRBgswtHs',s:56,e:66},
-  preacher_curl:{v:'fIWP-FRFNU0',s:65,e:76},cable_curl:{v:'NFzTWp2qpiE',s:89,e:99},
-  incline_curl:{v:'soxrZlIl35U',s:32,e:42},spider_curl:{v:'gI3GWirNwms',s:32,e:42},
-  conc_curl:{v:'Jvj2wV0vOYU',s:40,e:50},
-  skull_crush:{v:'d_KZxkY_0cM',s:108,e:120},tri_pushdown:{v:'2-LAMcpzODU',s:66,e:77},
-  tri_overhead:{v:'YbX7Wd8jQ-Q',s:60,e:72},close_grip_bench:{v:'nEF0bv2FW94',s:60,e:72},
-  tri_dip:{v:'2z8JmcrW-As',s:44,e:55},tri_kickback:{v:'ZBxMsNWBJNE',s:50,e:60},
-  squat:{v:'bEv6CCg2BC8',s:145,e:158},front_squat:{v:'m4ytaCJZpl0',s:123,e:135},
-  leg_press:{v:'IZxyjW7MPJQ',s:112,e:123},rdl:{v:'jEy_czb3RKA',s:117,e:130},
-  bss:{v:'2C-uNgKwPLE',s:35,e:48},ham_curl:{v:'1Tq3QdYUuHs',s:83,e:94},
-  leg_ext:{v:'YyvSfVjQeL0',s:41,e:52},calf_raise:{v:'gwLzBJYoWlI',s:38,e:48},
-  hack_squat:{v:'0tn5K9NlCfo',s:95,e:107},goblet_squat:{v:'MeIiIdhvXT4',s:68,e:80},
-  walking_lunge:{v:'L8fvypPrzzs',s:78,e:90},hip_thrust:{v:'SEdqd1n0cvg',s:152,e:164},
-  deadlift:{v:'op9kVnSso6Q',s:105,e:118},sumo_deadlift:{v:'VEglPRBjwzE',s:20,e:32},
-  leg_curl_seated:{v:'Orxowest56U',s:43,e:53},nordic_curl:{v:'BPKlV1eW7vM',s:30,e:40},
-  step_up:{v:'WCFCdxzFBa4',s:28,e:38},
-  suitcase_carry:{v:'E2v6vOljZWE',s:67,e:78},pallof_press:{v:'AH_QZLm_0-s',s:44,e:55},
-  copenhagen:{v:'UtSh0X6CdgI',s:20,e:32},dead_bug:{v:'I5xbsA71v1o',s:28,e:40},
-  hanging_leg_raise:{v:'Pr1ieGZ5atk',s:60,e:72},ab_wheel:{v:'PwqJMtS6mAo',s:45,e:56},
-  plank:{v:'ASdvN_XEl_c',s:72,e:82},cable_crunch:{v:'AV5PmSJcMD0',s:38,e:48},
-  woodchop:{v:'pAplQXk3dkU',s:42,e:52},farmers_carry:{v:'Fkzk_RqlYig',s:120,e:132},
-  russian_twist:{v:'wkD8rjkodUI',s:45,e:56},dragon_flag:{v:'pvz7k5gO-DE',s:70,e:82},
-  sissy_squat:{v:'RRJDfFDUBYA',s:30,e:42},adductor:{v:'Lh-eTTloORo',s:40,e:50},
-  abductor:{v:'Lh-eTTloORo',s:40,e:50},
-};
-
+// ── Exercise Demo (YouTube search-based — always finds best current videos) ──
+function getExSearchName(exId){
+  const lib=getFullLibrary().find(e=>e.id===exId);
+  return lib?lib.name:findExName(exId);
+}
 function renderDemoOverlay(container,exId,color){
-  const clip=EX_CLIPS[exId];
-  const overlay=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'8px',marginBottom:'8px',animation:'fadeIn 0.3s ease'}});
-
-  if(clip){
-    const thumbUrl=`https://img.youtube.com/vi/${clip.v}/hqdefault.jpg`;
-    const watchUrl=`https://www.youtube.com/watch?v=${clip.v}&t=${clip.s}`;
-    const embedUrl=`https://www.youtube.com/embed/${clip.v}?start=${clip.s}&end=${clip.e}&autoplay=1&mute=1&loop=1&playlist=${clip.v}&controls=0&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&playsinline=1`;
-
-    // Video container
-    const vidBox=h('div',{style:{position:'relative',width:'100%',borderRadius:'10px',overflow:'hidden',background:'#0a0a0f',aspectRatio:'16/9'}});
-
-    // Thumbnail as base layer (always loads)
-    const thumb=document.createElement('img');
-    thumb.src=thumbUrl;
-    thumb.style.cssText='width:100%;height:100%;object-fit:cover;display:block';
-    thumb.onerror=()=>{thumb.style.display='none'};
-    vidBox.appendChild(thumb);
-
-    // Play button overlay on thumbnail
-    const playBtn=h('div',{style:{position:'absolute',top:'0',left:'0',width:'100%',height:'100%',
-      display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',cursor:'pointer',
-      background:'rgba(0,0,0,0.45)',zIndex:'2',transition:'opacity 0.4s'},
-      onClick:()=>{
-        // Try to load iframe in place
-        playBtn.style.opacity='0';playBtn.style.pointerEvents='none';
-        const iframe=document.createElement('iframe');
-        iframe.src=embedUrl;
-        iframe.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;border:none;z-index:3';
-        iframe.setAttribute('allow','autoplay;encrypted-media');
-        iframe.setAttribute('allowfullscreen','');
-        vidBox.appendChild(iframe);
-        // Fallback — if iframe doesn't show video in 4s, open YouTube directly
-        setTimeout(()=>{
-          if(!document.fullscreenElement){
-            // Show "open externally" option
-            const extBtn=h('div',{style:{position:'absolute',bottom:'8px',left:'50%',transform:'translateX(-50%)',
-              background:'rgba(0,0,0,0.8)',borderRadius:'6px',padding:'6px 14px',zIndex:'5',cursor:'pointer',
-              fontSize:'10px',fontWeight:'700',color:'#fff',letterSpacing:'0.5px',whiteSpace:'nowrap'},
-              onClick:(e)=>{e.stopPropagation();window.open(watchUrl,'_blank')}},'\u2197 Open in YouTube');
-            vidBox.appendChild(extBtn);
-          }
-        },4000);
-      }},
-      h('div',{style:{width:'48px',height:'48px',borderRadius:'50%',background:'rgba(255,0,0,0.9)',
-        display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'8px',
-        boxShadow:'0 4px 20px rgba(255,0,0,0.3)'}},
-        h('div',{style:{width:'0',height:'0',borderStyle:'solid',borderWidth:'8px 0 8px 14px',
-          borderColor:'transparent transparent transparent #fff',marginLeft:'3px'}})),
-      h('div',{style:{fontSize:'10px',fontWeight:'700',color:'#fff',letterSpacing:'1px'}},'TAP TO PLAY'));
-    vidBox.appendChild(playBtn);
-
-    overlay.appendChild(vidBox);
-
-    // Full tutorial link
-    overlay.appendChild(h('a',{href:watchUrl,target:'_blank',rel:'noopener',
-      style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',padding:'8px',marginTop:'8px',
-        background:'rgba(255,255,255,0.03)',border:'1px solid var(--border)',borderRadius:'8px',
-        textDecoration:'none',color:'var(--text2)',fontSize:'11px',fontWeight:'600',letterSpacing:'0.5px'}},
-      '\u25B6  Watch full tutorial'));
-  }else{
-    overlay.appendChild(h('div',{style:{textAlign:'center',padding:'20px',color:'var(--text3)',fontSize:'11px'}},'No demo clip available for this exercise.'));
+  const name=getExSearchName(exId);
+  const searchUrl=`https://www.youtube.com/results?search_query=${encodeURIComponent(name+' proper form how to')}`;
+  const overlay=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'12px',padding:'14px',animation:'fadeIn 0.2s ease'}});
+  overlay.appendChild(h('a',{href:searchUrl,target:'_blank',rel:'noopener',
+    style:{display:'flex',alignItems:'center',gap:'12px',padding:'12px 14px',borderRadius:'10px',
+      background:'rgba(255,0,0,0.06)',border:'1px solid rgba(255,0,0,0.15)',textDecoration:'none',color:'var(--text)',marginBottom:'8px'}},
+    h('div',{style:{width:'40px',height:'40px',borderRadius:'50%',background:'rgba(255,0,0,0.85)',
+      display:'flex',alignItems:'center',justifyContent:'center',flexShrink:'0',
+      boxShadow:'0 2px 10px rgba(255,0,0,0.2)'}},
+      h('div',{style:{width:'0',height:'0',borderStyle:'solid',borderWidth:'6px 0 6px 11px',
+        borderColor:'transparent transparent transparent #fff',marginLeft:'2px'}})),
+    h('div',{},
+      h('div',{style:{fontSize:'12px',fontWeight:'700'}},`Watch: ${name}`),
+      h('div',{style:{fontSize:'9px',color:'var(--text3)',marginTop:'2px'}},'Opens YouTube with the best form videos'))));
+  // Form cues inline
+  const cues=getFormCues(exId);
+  if(cues){
+    const cueBox=h('div',{style:{padding:'8px 0 0'}});
+    cueBox.appendChild(h('div',{style:{fontSize:'8px',fontWeight:'700',letterSpacing:'1.5px',color:'var(--text3)',marginBottom:'6px'}},'QUICK FORM REMINDERS'));
+    cues.forEach(c=>cueBox.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text2)',padding:'2px 0 2px 10px',borderLeft:`2px solid ${color}30`,marginBottom:'3px'}},c)));
+    overlay.appendChild(cueBox);
   }
-
   container.appendChild(overlay);
 }
 
@@ -1203,10 +1120,9 @@ function render(){
     root.appendChild(header);
 
     // ── Expandable panels (info/demo/swap) — tucked away ──
-    const hasDemo=!!EX_CLIPS[displayId];
     if(state.showDemo||state.showExInfo||state.showSwapMenu){
       const panel=h('div',{style:{padding:'0 20px 4px',animation:'fadeIn 0.2s ease'}});
-      if(state.showDemo&&hasDemo){renderDemoOverlay(panel,displayId,day.color)}
+      if(state.showDemo){renderDemoOverlay(panel,displayId,day.color)}
       if(state.showExInfo){
         const exInfo=getExInfo(displayId);
         const infoBox=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'12px',padding:'12px',textAlign:'left'}});
@@ -1246,7 +1162,7 @@ function render(){
     // ── Toolbar: subtle row of text links ──
     if(!state.showDemo&&!state.showExInfo&&!state.showSwapMenu){
       const toolbar=h('div',{className:'ex-toolbar'});
-      if(hasDemo)toolbar.appendChild(h('button',{onClick:()=>{state.showDemo=true;render()}},'\u{1F3AC} how-to'));
+      toolbar.appendChild(h('button',{onClick:()=>{state.showDemo=true;render()}},'\u{1F3AC} how-to'));
       toolbar.appendChild(h('button',{onClick:()=>{state.showExInfo=true;render()}},'\u2139\uFE0F info'));
       if(SUBSTITUTION_MAP[ex.id])toolbar.appendChild(h('button',{style:{color:swap?day.color:'var(--text3)'},onClick:()=>{state.showSwapMenu=true;render()}},swap?'\u{1F504} swapped':'\u{1F504} swap'));
       const noteVal=getExNote(ex.id);
@@ -1321,10 +1237,14 @@ function render(){
     // RPE gradient slider
     const rpeSection=h('div',{style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'4px',padding:'0 4px'}});
     const rpeCol=getRpeColor(state.setRpe);
-    rpeSection.appendChild(h('div',{style:{fontSize:'18px',fontWeight:'900',color:rpeCol,minWidth:'32px',textAlign:'center',lineHeight:'1'}},String(state.setRpe)));
-    const slider=h('input',{type:'range',min:'1',max:'10',value:String(state.setRpe),className:'rpe-slider',
-      style:{'--accent':rpeCol}});
-    slider.addEventListener('input',e=>{state.setRpe=parseInt(e.target.value);render()});
+    const rpeLabel=h('div',{id:'rpe-val',style:{fontSize:'20px',fontWeight:'900',color:rpeCol,minWidth:'32px',textAlign:'center',lineHeight:'1'}},String(state.setRpe));
+    rpeSection.appendChild(rpeLabel);
+    const slider=h('input',{type:'range',min:'1',max:'10',value:String(state.setRpe),className:'rpe-slider'});
+    slider.addEventListener('input',e=>{
+      const v=parseInt(e.target.value);state.setRpe=v;
+      const el=document.getElementById('rpe-val');
+      if(el){el.textContent=String(v);el.style.color=getRpeColor(v)}
+    });
     rpeSection.appendChild(slider);
     rpeSection.appendChild(h('div',{style:{fontSize:'7px',fontWeight:'700',letterSpacing:'1px',color:'var(--text3)',minWidth:'20px'}},'RPE'));
     bottom.appendChild(rpeSection);

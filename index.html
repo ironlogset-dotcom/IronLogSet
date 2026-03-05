@@ -33,6 +33,13 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent;border:none;c
 .toast{position:fixed;top:calc(20px + var(--safe-t));left:50%;transform:translateX(-50%);background:rgba(12,12,22,.95);border:1px solid var(--border);border-radius:12px;padding:12px 24px;z-index:9999;backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,.5);animation:slideDown .3s ease}
 .toast span{font-size:14px;font-weight:700;color:var(--text)}
 .chart-bar{transition:height .5s ease}
+.rpe-slider{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;outline:none;background:linear-gradient(to right,#3dd68c 0%,#7de8b0 20%,#ffb800 40%,#ff8500 60%,#ff5533 75%,#ff3d3d 90%,#ff1a1a 100%);opacity:0.9}
+.rpe-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;transition:border-color .15s}
+.rpe-slider::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer}
+.rpe-slider::-webkit-slider-runnable-track{height:6px;border-radius:3px}
+.ex-toolbar{display:flex;justify-content:center;gap:10px;padding:0 20px;opacity:0.5;transition:opacity .2s}
+.ex-toolbar:hover,.ex-toolbar:active{opacity:0.8}
+.ex-toolbar button{background:none;border:none;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:0.5px;padding:4px 8px}
 </style>
 </head>
 <body>
@@ -40,7 +47,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent;border:none;c
 <div id="toast-container"></div>
 <script>
 // ═══════════════════════════════════════════════════════════
-// IRON LOG — PWA v4
+// IRON LOG — PWA v5
 // ═══════════════════════════════════════════════════════════
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
@@ -483,7 +490,7 @@ function drawChart(container,exId,color){
   const diff=prev?latest.weight-prev.weight:0;
   container.appendChild(h('div',{style:{display:'flex',justifyContent:'center',gap:'16px',marginTop:'8px',fontSize:'11px'}},
     h('span',{style:{color:'var(--text2)'}},`Latest: `,h('span',{style:{fontWeight:'800',color}},`${latest.weight} x ${latest.reps}`)),
-    diff!==0?h('span',{style:{color:diff>0?'#3dd68c':'#ff3d3d',fontWeight:'700'}},`${diff>0?'\u2191':'\u2193'}${Math.abs(diff).toFixed(1)} lbs`):null
+    diff!==0?h('span',{style:{color:diff>0?'#3dd68c':'#ff3d3d',fontWeight:'700'}},`${diff>0?'\u2191':'\u2193'}${Math.abs(diff).toFixed(1)} ${state.profile.weightUnit||'lbs'}`):null
   ));
 }
 
@@ -985,7 +992,7 @@ function render(){
     const colorRow=h('div',{style:{display:'flex',gap:'8px',flexWrap:'wrap',marginBottom:'20px'}});
     DAY_COLORS.forEach(c=>{const active=day.color===c;
       colorRow.appendChild(h('button',{style:{width:'32px',height:'32px',borderRadius:'50%',background:c,border:active?'3px solid #fff':'3px solid transparent',transition:'all 0.15s',boxShadow:active?`0 0 12px ${c}60`:'none'},
-        onClick:()=>{state.days[dayIdx].color=c;state.days[dayIdx].colorGlow=c.replace('#','rgba(')===c?`${c}20`:c+'20';save();render()}}))});
+        onClick:()=>{const r=parseInt(c.slice(1,3),16),g=parseInt(c.slice(3,5),16),b=parseInt(c.slice(5,7),16);state.days[dayIdx].color=c;state.days[dayIdx].colorGlow=`rgba(${r},${g},${b},0.12)`;save();render()}}))});
     root.appendChild(colorRow);
 
     // Exercises list
@@ -1142,7 +1149,7 @@ function render(){
     if(sessionVol>0){
       root.appendChild(h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'10px',padding:'10px 14px',marginBottom:'12px',display:'flex',justifyContent:'space-between',alignItems:'center'}},
         h('span',{style:{fontSize:'10px',fontWeight:'700',letterSpacing:'2px',color:'var(--text3)'}},'SESSION VOLUME'),
-        h('span',{style:{fontSize:'16px',fontWeight:'900',color:day.color}},sessionVol.toLocaleString(),h('span',{style:{fontSize:'10px',fontWeight:'600',color:'var(--text3)',marginLeft:'4px'}},'lbs'))));
+        h('span',{style:{fontSize:'16px',fontWeight:'900',color:day.color}},sessionVol.toLocaleString(),h('span',{style:{fontSize:'10px',fontWeight:'600',color:'var(--text3)',marginLeft:'4px'}},state.profile.weightUnit||'lbs'))));
     }
 
     const exList=h('div',{style:{display:'flex',flexDirection:'column',gap:'10px'}});
@@ -1164,249 +1171,187 @@ function render(){
   if(state.view==='exercise'&&state.selectedDay){
     const day=state.selectedDay;const ex=day.exercises[state.exIndex];
     const pr=state.prRecords[ex.id];const logged=state.sessionSets[ex.id]||[];
+    const warmupCount=logged.filter(s=>s.tag==='warmup').length;
+    const workCount=logged.filter(s=>s.tag!=='warmup').length;
     const isLastSet=state.currentSet>=ex.sets;const isLastEx=state.exIndex>=day.exercises.length-1;
     const isNewPr=state.setWeight*state.setReps>(pr?pr.weight*pr.reps:0)&&state.setWeight*state.setReps>0;
+    const swap=state.sessionSwaps[ex.id];
+    const displayName=swap?swap.subName:ex.name;
+    const displayId=swap?swap.subId:ex.id;
 
     root.style.padding='0';root.style.display='flex';root.style.flexDirection='column';root.style.overflow='hidden';
 
     // Top bar
     root.appendChild(h('div',{style:{padding:`calc(12px + var(--safe-t)) 16px 0`,display:'flex',justifyContent:'space-between',alignItems:'center'}},
-      h('button',{style:{background:'none',color:'var(--text2)',fontSize:'14px',fontWeight:'600',padding:'4px 0'},onClick:()=>{state.view='day';render()}},'\u2190 Exercises'),
+      h('button',{style:{background:'none',color:'var(--text2)',fontSize:'14px',fontWeight:'600',padding:'4px 0'},onClick:()=>{state.view='day';render()}},'\u2190 Back'),
       h('button',{style:{background:'none',color:'var(--text3)',fontSize:'12px',fontWeight:'600'},onClick:()=>skipExercise()},`${isLastEx?'Finish':'Skip'} \u203A`)));
 
-    // Exercise info
-    const info=h('div',{style:{padding:'12px 20px 0',textAlign:'center'}});
-    info.appendChild(h('div',{style:{fontSize:'10px',fontWeight:'700',letterSpacing:'3px',color:day.color,marginBottom:'4px'}},`${state.exIndex+1} / ${day.exercises.length}`));
-    // Show swap indicator if active
-    const swap=state.sessionSwaps[ex.id];
-    const displayName=swap?swap.subName:ex.name;
-    const displayId=swap?swap.subId:ex.id;
-    info.appendChild(h('div',{style:{fontSize:'20px',fontWeight:'900',color:'var(--text)',marginBottom:'2px'}},displayName));
-    if(swap)info.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'700',letterSpacing:'1px',color:'var(--text3)',marginBottom:'2px'}},'\u21BA SWAPPED FROM: '+ex.name));
-    else if(ex.sub)info.appendChild(h('div',{style:{fontSize:'11px',color:'var(--text3)',marginBottom:'2px'}},ex.sub));
-    // Next exercise preview
-    const nextEx=state.exIndex<day.exercises.length-1?day.exercises[state.exIndex+1]:null;
-    if(nextEx){
-      const nextSwap=state.sessionSwaps[nextEx.id];
-      const nextName=nextSwap?nextSwap.subName:nextEx.name;
-      info.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)',marginBottom:'4px',letterSpacing:'0.3px'}},
-        'NEXT: ',h('span',{style:{color:'var(--text2)',fontWeight:'600'}},`${nextName} \u00B7 ${nextEx.sets} sets \u00D7 ${nextEx.repRange}`)));
-    }else{
-      info.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'700',letterSpacing:'1px',color:'var(--text3)',marginBottom:'4px'}},'LAST EXERCISE'));
-    }
+    // ── Header: exercise name + progress dots ──
+    const header=h('div',{style:{padding:'8px 20px 0',textAlign:'center'}});
+    header.appendChild(h('div',{style:{fontSize:'18px',fontWeight:'900',color:'var(--text)',marginBottom:'2px'}},displayName));
+    if(swap)header.appendChild(h('div',{style:{fontSize:'9px',color:'var(--text3)',marginBottom:'4px'}},'\u21BA from '+ex.name));
+    else if(ex.sub)header.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)',marginBottom:'4px'}},ex.sub));
+    // Compact progress: dots + set counter in one line
+    const progressLine=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'4px'}});
+    const dots=h('div',{style:{display:'flex',alignItems:'center',gap:'4px'}});
+    for(let i=0;i<warmupCount;i++)dots.appendChild(h('div',{style:{width:'5px',height:'5px',borderRadius:'50%',background:'rgba(255,165,0,0.5)'}}));
+    for(let i=0;i<ex.sets;i++)dots.appendChild(h('div',{style:{width:i===state.currentSet-1?'16px':'6px',height:'6px',borderRadius:'3px',background:i<workCount?'#3dd68c':i===state.currentSet-1?day.color:'rgba(255,255,255,0.08)',transition:'all 0.3s'}}));
+    progressLine.appendChild(dots);
+    progressLine.appendChild(h('span',{style:{fontSize:'10px',color:'var(--text3)'}},`${state.currentSet}/${ex.sets}`));
+    if(pr)progressLine.appendChild(h('span',{style:{fontSize:'9px',color:'var(--gold)',fontWeight:'700'}},`PR ${pr.weight}\u00D7${pr.reps}`));
+    header.appendChild(progressLine);
+    root.appendChild(header);
 
-    // How-To button + Info button + Swap button row
-    const btnRow=h('div',{style:{display:'flex',justifyContent:'center',gap:'6px',marginBottom:'4px',flexWrap:'wrap'}});
+    // ── Expandable panels (info/demo/swap) — tucked away ──
     const hasDemo=!!EX_CLIPS[displayId];
-    if(hasDemo){
-      btnRow.appendChild(h('button',{style:{background:state.showDemo?`${day.color}15`:'rgba(255,255,255,0.04)',border:`1px solid ${state.showDemo?day.color+'30':'rgba(255,255,255,0.08)'}`,borderRadius:'8px',padding:'4px 12px',fontSize:'10px',fontWeight:'700',color:state.showDemo?day.color:'var(--text3)',letterSpacing:'1px'},
-        onClick:()=>{state.showDemo=!state.showDemo;state.showExInfo=false;state.showSwapMenu=false;render()}},state.showDemo?'\u2715 CLOSE':'\u{1F3AC} HOW-TO'));
-    }
-    // Info button
-    const hasInfo=!!(getExInfo(displayId));
-    btnRow.appendChild(h('button',{style:{background:state.showExInfo?`${day.color}15`:'rgba(255,255,255,0.04)',border:`1px solid ${state.showExInfo?day.color+'30':'rgba(255,255,255,0.08)'}`,borderRadius:'8px',padding:'4px 12px',fontSize:'10px',fontWeight:'700',color:state.showExInfo?day.color:'var(--text3)',letterSpacing:'1px'},
-      onClick:()=>{state.showExInfo=!state.showExInfo;state.showDemo=false;state.showSwapMenu=false;render()}},state.showExInfo?'\u2715 CLOSE':'\u2139\uFE0F INFO'));
-    // Swap button (only if substitutions exist for this exercise)
-    if(SUBSTITUTION_MAP[ex.id]){
-      const hasActiveSwap=!!state.sessionSwaps[ex.id];
-      btnRow.appendChild(h('button',{style:{background:hasActiveSwap?`${day.color}15`:(state.showSwapMenu?`${day.color}15`:'rgba(255,255,255,0.04)'),border:`1px solid ${state.showSwapMenu||hasActiveSwap?day.color+'30':'rgba(255,255,255,0.08)'}`,borderRadius:'8px',padding:'4px 12px',fontSize:'10px',fontWeight:'700',color:state.showSwapMenu||hasActiveSwap?day.color:'var(--text3)',letterSpacing:'1px'},
-        onClick:()=>{state.showSwapMenu=!state.showSwapMenu;state.showDemo=false;state.showExInfo=false;render()}},state.showSwapMenu?'\u2715 CLOSE':'\u{1F504} SWAP'));
-    }
-    info.appendChild(btnRow);
-
-    // Demo overlay
-    if(state.showDemo&&hasDemo){renderDemoOverlay(info,displayId,day.color)}
-
-    // Exercise info overlay
-    if(state.showExInfo){
-      const exInfo=getExInfo(displayId);
-      const infoBox=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'12px',marginBottom:'8px',textAlign:'left',animation:'fadeIn 0.3s ease'}});
-      if(exInfo){
-        infoBox.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'700',letterSpacing:'2px',color:day.color,marginBottom:'6px'}},'TARGET MUSCLES'));
-        infoBox.appendChild(h('div',{style:{fontSize:'12px',color:'var(--text)',marginBottom:'10px',fontWeight:'600'}},exInfo.muscles));
-        infoBox.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'700',letterSpacing:'2px',color:day.color,marginBottom:'6px'}},'TIPS'));
-        infoBox.appendChild(h('div',{style:{fontSize:'11px',color:'var(--text2)',lineHeight:'1.5'}},exInfo.tips));
-      }else{
-        infoBox.appendChild(h('div',{style:{fontSize:'11px',color:'var(--text3)'}},'No info available for this exercise yet.'));
+    if(state.showDemo||state.showExInfo||state.showSwapMenu){
+      const panel=h('div',{style:{padding:'0 20px 4px',animation:'fadeIn 0.2s ease'}});
+      if(state.showDemo&&hasDemo){renderDemoOverlay(panel,displayId,day.color)}
+      if(state.showExInfo){
+        const exInfo=getExInfo(displayId);
+        const infoBox=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'12px',padding:'12px',textAlign:'left'}});
+        if(exInfo){
+          infoBox.appendChild(h('div',{style:{fontSize:'11px',color:'var(--text)',fontWeight:'600',marginBottom:'6px'}},exInfo.muscles));
+          infoBox.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)',lineHeight:'1.5'}},exInfo.tips));
+        }else{infoBox.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)'}},'No info available.'))}
+        const cuesInfo=getFormCues(displayId);
+        if(cuesInfo){infoBox.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'700',color:'#ff8500',marginTop:'8px',marginBottom:'4px'}},'\u26A0 FORM CUES'));
+          cuesInfo.forEach(c=>infoBox.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text2)',padding:'2px 0 2px 10px',borderLeft:'2px solid rgba(255,133,0,0.25)',marginBottom:'3px'}},c)))}
+        panel.appendChild(infoBox);
       }
-      // Form cues
-      const cues=getFormCues(displayId);
-      if(cues){
-        infoBox.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'700',letterSpacing:'2px',color:'#ff8500',marginTop:'12px',marginBottom:'6px'}},'\u26A0\uFE0F FORM CUES'));
-        cues.forEach(c=>infoBox.appendChild(h('div',{style:{fontSize:'11px',color:'var(--text2)',padding:'3px 0 3px 12px',borderLeft:'2px solid rgba(255,133,0,0.3)',marginBottom:'4px'}},c)));
+      if(state.showSwapMenu&&SUBSTITUTION_MAP[ex.id]){
+        const subs=SUBSTITUTION_MAP[ex.id];
+        const swapBox=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'12px',padding:'12px'}});
+        if(state.sessionSwaps[ex.id]){
+          swapBox.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text2)',marginBottom:'6px'}},'\u2713 Swapped to: '+state.sessionSwaps[ex.id].subName));
+          swapBox.appendChild(h('button',{style:{width:'100%',padding:'7px',borderRadius:'8px',background:'rgba(255,61,61,0.06)',border:'1px solid rgba(255,61,61,0.15)',color:'#ff3d3d',fontSize:'10px',fontWeight:'700'},onClick:()=>{delete state.sessionSwaps[ex.id];state.showSwapMenu=false;render()}},'Revert'));
+        }else{
+          [{key:'good',label:'GOOD',col:'var(--text3)'},{key:'better',label:'BETTER',col:'#ffb800'},{key:'best',label:'BEST',col:'#3dd68c'}].forEach(lv=>{
+            const subId=subs[lv.key];if(!subId)return;const subLib=getFullLibrary().find(e=>e.id===subId);if(!subLib)return;
+            swapBox.appendChild(h('button',{style:{width:'100%',padding:'8px 10px',borderRadius:'8px',background:'rgba(255,255,255,0.02)',border:'1px solid var(--border)',marginBottom:'4px',display:'flex',alignItems:'center',gap:'8px',textAlign:'left',color:'var(--text)'},
+              onClick:()=>{state.sessionSwaps[ex.id]={subId,subName:subLib.name};state.showSwapMenu=false;render()}},
+              h('span',{style:{fontSize:'8px',fontWeight:'800',color:lv.col,letterSpacing:'1px',minWidth:'38px'}},lv.label),
+              h('span',{style:{fontSize:'11px',fontWeight:'600'}},subLib.name)));
+          });
+        }
+        panel.appendChild(swapBox);
       }
-      info.appendChild(infoBox);
+      // Close button
+      panel.appendChild(h('div',{style:{textAlign:'center',marginTop:'4px'}},
+        h('button',{style:{background:'none',border:'none',fontSize:'9px',color:'var(--text3)',fontWeight:'600',padding:'4px 12px'},
+          onClick:()=>{state.showDemo=false;state.showExInfo=false;state.showSwapMenu=false;render()}},'\u2715 close')));
+      root.appendChild(panel);
     }
 
-    // Swap menu overlay
-    if(state.showSwapMenu&&SUBSTITUTION_MAP[ex.id]){
-      const subs=SUBSTITUTION_MAP[ex.id];
-      const swapBox=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'12px',marginBottom:'8px',animation:'fadeIn 0.3s ease'}});
-      if(state.sessionSwaps[ex.id]){
-        swapBox.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text2)',marginBottom:'8px',fontWeight:'600'}},'Currently swapped to: '+state.sessionSwaps[ex.id].subName));
-        swapBox.appendChild(h('button',{style:{width:'100%',padding:'8px',borderRadius:'8px',background:'rgba(255,61,61,0.08)',border:'1px solid rgba(255,61,61,0.2)',color:'#ff3d3d',fontSize:'11px',fontWeight:'700'},
-          onClick:()=>{delete state.sessionSwaps[ex.id];state.showSwapMenu=false;render()}},'Revert to Original'));
-      }else{
-        swapBox.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'800',letterSpacing:'2px',color:'var(--text3)',marginBottom:'8px'}},'SWAP FOR THIS SESSION ONLY'));
-        const levels=[{key:'good',label:'GOOD',col:'var(--text3)'},{key:'better',label:'BETTER',col:'#ffb800'},{key:'best',label:'BEST',col:'#3dd68c'}];
-        levels.forEach(lv=>{
-          const subId=subs[lv.key];if(!subId)return;
-          const subLib=getFullLibrary().find(e=>e.id===subId);if(!subLib)return;
-          swapBox.appendChild(h('button',{style:{width:'100%',padding:'10px 12px',borderRadius:'8px',background:'rgba(255,255,255,0.03)',border:'1px solid var(--border)',marginBottom:'6px',display:'flex',alignItems:'center',gap:'10px',textAlign:'left',color:'var(--text)'},
-            onClick:()=>{state.sessionSwaps[ex.id]={subId,subName:subLib.name};state.showSwapMenu=false;render()}},
-            h('span',{style:{fontSize:'8px',fontWeight:'800',color:lv.col,letterSpacing:'1px',minWidth:'42px'}},lv.label),
-            h('span',{style:{fontSize:'12px',fontWeight:'700'}},subLib.name)));
-        });
-      }
-      info.appendChild(swapBox);
+    // ── Toolbar: subtle row of text links ──
+    if(!state.showDemo&&!state.showExInfo&&!state.showSwapMenu){
+      const toolbar=h('div',{className:'ex-toolbar'});
+      if(hasDemo)toolbar.appendChild(h('button',{onClick:()=>{state.showDemo=true;render()}},'\u{1F3AC} how-to'));
+      toolbar.appendChild(h('button',{onClick:()=>{state.showExInfo=true;render()}},'\u2139\uFE0F info'));
+      if(SUBSTITUTION_MAP[ex.id])toolbar.appendChild(h('button',{style:{color:swap?day.color:'var(--text3)'},onClick:()=>{state.showSwapMenu=true;render()}},swap?'\u{1F504} swapped':'\u{1F504} swap'));
+      const noteVal=getExNote(ex.id);
+      toolbar.appendChild(h('button',{style:{color:noteVal?day.color:'var(--text3)'},onClick:()=>{
+        const val=prompt('Exercise note:',getExNote(ex.id));if(val!==null){setExNote(ex.id,val);render()}
+      }},noteVal?'\u{1F4DD} note':'\u{1F4DD} note'));
+      root.appendChild(toolbar);
     }
 
-    // Exercise notes
-    const noteVal=getExNote(ex.id);
-    const noteBox=h('div',{style:{marginBottom:'6px'}});
-    const noteToggle=h('button',{style:{background:'none',border:'none',fontSize:'10px',fontWeight:'600',color:noteVal?day.color:'var(--text3)',letterSpacing:'0.5px',padding:'2px 8px'},
-      onClick:()=>{
-        const existing=getExNote(ex.id);
-        const val=prompt('Exercise note (machine settings, injury notes, etc):',existing);
-        if(val!==null){setExNote(ex.id,val);render()}
-      }},noteVal?'\u{1F4DD} '+noteVal:'\u{1F4DD} Add note');
-    noteBox.appendChild(noteToggle);
-    info.appendChild(noteBox);
-
-    // Progression controls
-    const stepBtn=(label,onClick)=>h('button',{style:{width:'24px',height:'24px',borderRadius:'6px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',color:'var(--text2)',fontSize:'13px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:'1',padding:'0'},onClick},label);
-    const targetRow=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'12px',marginBottom:'8px',padding:'6px 10px',background:'rgba(255,255,255,0.02)',borderRadius:'8px',border:'1px solid rgba(255,255,255,0.04)'}});
-    const setsG=h('div',{style:{display:'flex',alignItems:'center',gap:'5px'}});
-    setsG.appendChild(stepBtn('\u2212',()=>adjustTarget(state.exIndex,'sets',-1)));
-    setsG.appendChild(h('div',{style:{textAlign:'center',minWidth:'40px'}},h('div',{style:{fontSize:'14px',fontWeight:'800',color:'var(--text)',lineHeight:'1'}},String(ex.sets)),h('div',{style:{fontSize:'7px',fontWeight:'700',letterSpacing:'1px',color:'var(--text3)',marginTop:'1px'}},'SETS')));
-    setsG.appendChild(stepBtn('+',()=>adjustTarget(state.exIndex,'sets',1)));
-    targetRow.appendChild(setsG);
-    targetRow.appendChild(h('div',{style:{fontSize:'11px',color:'rgba(255,255,255,0.1)'}},'\u00D7'));
-    const repsG=h('div',{style:{display:'flex',alignItems:'center',gap:'5px'}});
-    repsG.appendChild(stepBtn('\u2212',()=>adjustTarget(state.exIndex,'reps',-1)));
-    repsG.appendChild(h('div',{style:{textAlign:'center',minWidth:'40px'}},h('div',{style:{fontSize:'14px',fontWeight:'800',color:'var(--text)',lineHeight:'1'}},ex.repRange),h('div',{style:{fontSize:'7px',fontWeight:'700',letterSpacing:'1px',color:'var(--text3)',marginTop:'1px'}},'REPS')));
-    repsG.appendChild(stepBtn('+',()=>adjustTarget(state.exIndex,'reps',1)));
-    targetRow.appendChild(repsG);
-    info.appendChild(targetRow);
-
-    // Set info + PR
-    const warmupCount=logged.filter(s=>s.tag==='warmup').length;
-    const workCount=logged.filter(s=>s.tag!=='warmup').length;
-    const setInfo=h('div',{style:{fontSize:'11px',color:'var(--text2)'}});
-    setInfo.innerHTML=`Set <span style="font-weight:800;color:${day.color};font-size:15px">${state.currentSet}</span> of ${ex.sets}`;
-    if(warmupCount>0)setInfo.innerHTML+=`<span style="color:var(--text3)"> + ${warmupCount} warmup</span>`;
-    if(pr)setInfo.innerHTML+=`<span style="color:var(--gold)"> \u2022 PR: ${pr.weight}\u00D7${pr.reps}</span>`;
-    info.appendChild(setInfo);
-
-    // Dots — working set dots only, warmup dots shown separately
-    const dots=h('div',{style:{display:'flex',justifyContent:'center',gap:'6px',marginTop:'8px'}});
-    // Warmup dots (small, muted)
-    for(let i=0;i<warmupCount;i++)dots.appendChild(h('div',{style:{width:'6px',height:'6px',borderRadius:'3px',background:'rgba(255,165,0,0.4)',border:'1px solid rgba(255,165,0,0.3)',transition:'all 0.3s'}}));
-    // Working set dots
-    for(let i=0;i<ex.sets;i++)dots.appendChild(h('div',{style:{width:i===state.currentSet-1?'24px':'8px',height:'8px',borderRadius:'4px',background:i<workCount?'#3dd68c':i===state.currentSet-1?day.color:'var(--border)',transition:'all 0.3s'}}));
-    info.appendChild(dots);root.appendChild(info);
-
-    // Rest timer (inline between info and pickers)
+    // ── Rest timer ──
     if(state.restActive){
-      const restEl=h('div',{style:{padding:'8px 20px',textAlign:'center'}});
-      const restBox=h('div',{style:{background:'rgba(255,61,61,0.06)',border:'1px solid rgba(255,61,61,0.15)',borderRadius:'12px',padding:'10px 16px',position:'relative',overflow:'hidden'}});
-      restBox.appendChild(h('div',{id:'rest-progress',style:{position:'absolute',top:'0',left:'0',height:'100%',background:'rgba(255,61,61,0.08)',borderRadius:'12px',width:`${((state.restSeconds-state.restRemaining)/state.restSeconds)*100}%`,transition:'width 1s linear'}}));
+      const restBox=h('div',{style:{margin:'4px 20px',background:'rgba(255,255,255,0.03)',borderRadius:'10px',padding:'8px 14px',position:'relative',overflow:'hidden'}});
+      restBox.appendChild(h('div',{id:'rest-progress',style:{position:'absolute',top:'0',left:'0',height:'100%',background:`${day.color}12`,borderRadius:'10px',width:`${((state.restSeconds-state.restRemaining)/state.restSeconds)*100}%`,transition:'width 1s linear'}}));
       restBox.appendChild(h('div',{style:{position:'relative',display:'flex',alignItems:'center',justifyContent:'space-between'}},
-        h('span',{style:{fontSize:'10px',fontWeight:'700',letterSpacing:'2px',color:'var(--text3)'}},'REST'),
-        h('span',{id:'rest-display',style:{fontSize:'22px',fontWeight:'900',color:'var(--accent)'}},fmtTime(state.restRemaining)),
-        h('button',{style:{background:'rgba(255,255,255,0.08)',borderRadius:'8px',padding:'4px 12px',fontSize:'10px',fontWeight:'700',color:'var(--text2)'},onClick:()=>{stopRest();render()}},'SKIP')));
-      restEl.appendChild(restBox);root.appendChild(restEl);
+        h('span',{style:{fontSize:'9px',fontWeight:'700',letterSpacing:'1.5px',color:'var(--text3)'}},'REST'),
+        h('span',{id:'rest-display',style:{fontSize:'20px',fontWeight:'900',color:day.color}},fmtTime(state.restRemaining)),
+        h('button',{style:{background:'rgba(255,255,255,0.06)',borderRadius:'6px',padding:'3px 10px',fontSize:'9px',fontWeight:'700',color:'var(--text3)'},onClick:()=>{stopRest();render()}},'SKIP')));
+      root.appendChild(restBox);
     }
 
-    // Tag selector
-    const tagRow=h('div',{style:{padding:'4px 20px',display:'flex',justifyContent:'center',gap:'6px'}});
-    SET_TAGS.forEach(tag=>{
-      const active=state.setTag===tag;const col=TAG_COLORS[tag]||day.color;
-      tagRow.appendChild(h('button',{style:{padding:'4px 10px',borderRadius:'6px',fontSize:'9px',fontWeight:'700',letterSpacing:'1px',
-        background:active?(tag==='normal'?'rgba(255,255,255,0.08)':`${col}20`):'rgba(255,255,255,0.02)',
-        border:`1px solid ${active?(tag==='normal'?'rgba(255,255,255,0.15)':`${col}40`):'rgba(255,255,255,0.04)'}`,
-        color:active?(tag==='normal'?'var(--text)':col):'var(--text3)'},
-        onClick:()=>{state.setTag=tag;render()}},tag.toUpperCase()));
-    });root.appendChild(tagRow);
-
-    // Per-set RPE selector
-    const rpeRow=h('div',{style:{padding:'2px 16px',display:'flex',alignItems:'center',justifyContent:'center',gap:'4px'}});
-    rpeRow.appendChild(h('span',{style:{fontSize:'8px',fontWeight:'700',letterSpacing:'1px',color:'var(--text3)',marginRight:'4px'}},'RPE'));
-    for(let r=1;r<=10;r++){const active=r===state.setRpe;const col=getRpeColor(r);
-      rpeRow.appendChild(h('button',{style:{width:active?'26px':'22px',height:active?'26px':'22px',borderRadius:'50%',
-        border:active?`2px solid ${col}`:'1px solid rgba(255,255,255,0.06)',
-        background:active?`${col}25`:'transparent',
-        color:active?col:'var(--text3)',fontSize:active?'11px':'9px',fontWeight:active?'900':'600',
-        display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.15s',padding:'0'},
-        onClick:()=>{state.setRpe=r;render()}},String(r)))}
-    root.appendChild(rpeRow);
-
-    // Pickers
+    // ── Weight + Reps pickers ──
     const pickerRow=h('div',{style:{flex:'1',display:'flex',alignItems:'center',justifyContent:'center',padding:'0 24px',gap:'16px',minHeight:'0'}});
-    pickerRow.appendChild(createPicker(WEIGHTS,state.setWeight,v=>{state.setWeight=v;updatePrInd()},'WEIGHT (lbs)',v=>v===0?'BW':v%1===0?v:v.toFixed(1),day.color));
-    pickerRow.appendChild(h('div',{style:{width:'1px',height:'100px',background:'var(--border)',flexShrink:'0'}}));
+    pickerRow.appendChild(createPicker(WEIGHTS,state.setWeight,v=>{state.setWeight=v;updatePrInd()},'WEIGHT',v=>v===0?'BW':v%1===0?v:v.toFixed(1),day.color));
+    pickerRow.appendChild(h('div',{style:{width:'1px',height:'80px',background:'rgba(255,255,255,0.06)',flexShrink:'0'}}));
     pickerRow.appendChild(createPicker(REPS,state.setReps,v=>{state.setReps=v;updatePrInd()},'REPS',null,day.color));
     root.appendChild(pickerRow);
 
-    // Assisted movement weight picker
+    // ── Assisted movement ──
     if(ASSISTED_EXERCISES.has(ex.id)){
       const ASSIST_VALS=[0,5,10,15,20,25,30,35,40,45,50,60,70,80,90,100];
-      const assistRow=h('div',{style:{padding:'4px 24px',display:'flex',alignItems:'center',justifyContent:'center',gap:'10px'}});
-      assistRow.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'700',letterSpacing:'1.5px',color:'var(--text3)'}},'\u2212 ASSIST'));
-      assistRow.appendChild(h('button',{style:{width:'28px',height:'28px',borderRadius:'8px',background:'rgba(255,255,255,0.06)',border:'1px solid var(--border)',color:'var(--text2)',fontSize:'18px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:'1'},
+      const assistRow=h('div',{style:{padding:'2px 24px',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}});
+      assistRow.appendChild(h('div',{style:{fontSize:'8px',fontWeight:'700',color:'var(--text3)',letterSpacing:'1px'}},'\u2212 ASSIST'));
+      assistRow.appendChild(h('button',{style:{width:'26px',height:'26px',borderRadius:'6px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.06)',color:'var(--text3)',fontSize:'16px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:'1'},
         onClick:()=>{const i=ASSIST_VALS.indexOf(state.setAssistWeight);if(i>0){state.setAssistWeight=ASSIST_VALS[i-1];render()}}},'−'));
-      assistRow.appendChild(h('div',{style:{minWidth:'56px',textAlign:'center',fontSize:'18px',fontWeight:'800',color:state.setAssistWeight>0?day.color:'var(--text3)'}},
-        state.setAssistWeight>0?`${state.setAssistWeight} lbs`:'None'));
-      assistRow.appendChild(h('button',{style:{width:'28px',height:'28px',borderRadius:'8px',background:'rgba(255,255,255,0.06)',border:'1px solid var(--border)',color:'var(--text2)',fontSize:'18px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:'1'},
+      assistRow.appendChild(h('div',{style:{minWidth:'50px',textAlign:'center',fontSize:'15px',fontWeight:'800',color:state.setAssistWeight>0?day.color:'var(--text3)'}},
+        state.setAssistWeight>0?`${state.setAssistWeight}`:'\u2014'));
+      assistRow.appendChild(h('button',{style:{width:'26px',height:'26px',borderRadius:'6px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.06)',color:'var(--text3)',fontSize:'16px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:'1'},
         onClick:()=>{const i=ASSIST_VALS.indexOf(state.setAssistWeight);if(i<ASSIST_VALS.length-1){state.setAssistWeight=ASSIST_VALS[i+1];render()}}},'+'));
-      assistRow.appendChild(h('div',{style:{fontSize:'8px',color:'var(--text3)'}},'\n(BW minus assist)'));
       root.appendChild(assistRow);
     }
 
-    // PR indicator
-    const prInd=h('div',{id:'pr-indicator',style:{textAlign:'center',padding:'0 0 4px',minHeight:'20px'}});
-    if(isNewPr)prInd.innerHTML='<span style="font-size:11px;font-weight:900;color:#ff3d3d;letter-spacing:2px;animation:prBurst 0.5s ease">\u{1F525} NEW PR \u{1F525}</span>';
-    root.appendChild(prInd);
+    // ── PR indicator ──
+    if(isNewPr){
+      root.appendChild(h('div',{id:'pr-indicator',style:{textAlign:'center',padding:'2px 0'}},
+        h('span',{style:{fontSize:'11px',fontWeight:'900',color:'#ff3d3d',letterSpacing:'2px',animation:'prBurst 0.5s ease'}},'\u{1F525} NEW PR \u{1F525}')));
+    }else{root.appendChild(h('div',{id:'pr-indicator',style:{minHeight:'2px'}}))}
 
-    // Logged sets chips
+    // ── Logged sets (compact) ──
     if(logged.length>0){
-      const chips=h('div',{style:{padding:'0 20px 4px',display:'flex',justifyContent:'center',gap:'5px',flexWrap:'wrap'}});
-      logged.forEach(s=>{const tc=TAG_COLORS[s.tag]||'';const rc=s.rpe?getRpeColor(s.rpe):'';
-        const assistTxt=s.assistWeight?` \u2212${s.assistWeight}`:'';
-        chips.appendChild(h('div',{style:{fontSize:'9px',color:tc||'var(--text3)',background:'var(--card)',border:`1px solid ${tc?tc+'30':'var(--border)'}`,borderRadius:'6px',padding:'3px 6px',display:'flex',alignItems:'center',gap:'3px'}},
-          `${s.tag&&s.tag!=='normal'?TAG_LABELS[s.tag]+' ':''}S${s.set}: ${s.weight===0?'BW':s.weight}\u00D7${s.reps}${assistTxt}`,
-          s.rpe?h('span',{style:{fontSize:'7px',fontWeight:'800',color:rc,marginLeft:'2px'}},`R${s.rpe}`):null))});
+      const chips=h('div',{style:{padding:'0 20px 2px',display:'flex',justifyContent:'center',gap:'4px',flexWrap:'wrap'}});
+      logged.forEach(s=>{const tc=TAG_COLORS[s.tag]||'';
+        chips.appendChild(h('div',{style:{fontSize:'8px',color:tc||'var(--text3)',background:'rgba(255,255,255,0.03)',borderRadius:'4px',padding:'2px 5px'}},
+          `${s.tag&&s.tag!=='normal'?TAG_LABELS[s.tag]+' ':''}${s.weight===0?'BW':s.weight}\u00D7${s.reps}`))});
       root.appendChild(chips);
     }
 
-    // Rest timer presets (when not active, shown small)
+    // ── Bottom controls: tag + RPE + rest + log button ──
+    const bottom=h('div',{style:{padding:'0 20px'}});
+
+    // Tag selector (compact)
+    const tagRow=h('div',{style:{display:'flex',justifyContent:'center',gap:'5px',marginBottom:'4px'}});
+    SET_TAGS.forEach(tag=>{
+      const active=state.setTag===tag;const col=TAG_COLORS[tag]||day.color;
+      tagRow.appendChild(h('button',{style:{padding:'3px 9px',borderRadius:'5px',fontSize:'9px',fontWeight:active?'800':'600',letterSpacing:'0.5px',
+        background:active?(tag==='normal'?'rgba(255,255,255,0.08)':`${col}15`):'transparent',
+        border:`1px solid ${active?(tag==='normal'?'rgba(255,255,255,0.1)':`${col}30`):'rgba(255,255,255,0.04)'}`,
+        color:active?(tag==='normal'?'var(--text)':col):'var(--text3)'},
+        onClick:()=>{state.setTag=tag;render()}},tag.toUpperCase()));
+    });
+    bottom.appendChild(tagRow);
+
+    // RPE gradient slider
+    const rpeSection=h('div',{style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'4px',padding:'0 4px'}});
+    const rpeCol=getRpeColor(state.setRpe);
+    rpeSection.appendChild(h('div',{style:{fontSize:'18px',fontWeight:'900',color:rpeCol,minWidth:'32px',textAlign:'center',lineHeight:'1'}},String(state.setRpe)));
+    const slider=h('input',{type:'range',min:'1',max:'10',value:String(state.setRpe),className:'rpe-slider',
+      style:{'--accent':rpeCol}});
+    slider.addEventListener('input',e=>{state.setRpe=parseInt(e.target.value);render()});
+    rpeSection.appendChild(slider);
+    rpeSection.appendChild(h('div',{style:{fontSize:'7px',fontWeight:'700',letterSpacing:'1px',color:'var(--text3)',minWidth:'20px'}},'RPE'));
+    bottom.appendChild(rpeSection);
+
+    // Rest presets (when not active)
     if(!state.restActive){
-      const restRow=h('div',{style:{padding:'2px 20px 0',display:'flex',justifyContent:'center',alignItems:'center',gap:'4px'}});
-      restRow.appendChild(h('span',{style:{fontSize:'8px',color:'var(--text3)',marginRight:'4px'}},'\u23F1'));
+      const restRow=h('div',{style:{display:'flex',justifyContent:'center',alignItems:'center',gap:'3px',marginBottom:'4px'}});
+      restRow.appendChild(h('span',{style:{fontSize:'8px',color:'var(--text3)',marginRight:'2px'}},'\u23F1'));
       REST_PRESETS.forEach(sec=>{const active=state.restSeconds===sec;
-        restRow.appendChild(h('button',{style:{padding:'3px 7px',borderRadius:'5px',fontSize:'8px',fontWeight:active?'800':'600',background:active?'rgba(255,255,255,0.08)':'transparent',color:active?'var(--text)':'var(--text3)',border:active?'1px solid rgba(255,255,255,0.12)':'1px solid transparent'},
+        restRow.appendChild(h('button',{style:{padding:'2px 6px',borderRadius:'4px',fontSize:'8px',fontWeight:active?'800':'500',background:active?'rgba(255,255,255,0.06)':'transparent',color:active?'var(--text)':'var(--text3)',border:'none'},
           onClick:()=>{state.restSeconds=sec;save();render()}},fmtTime(sec)))});
-      root.appendChild(restRow);
+      bottom.appendChild(restRow);
     }
 
-    // Undo last set + form cue
-    const actionRow=h('div',{style:{padding:'0 20px',display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'2px'}});
+    // Undo
     if(logged.length>0){
-      actionRow.appendChild(h('button',{style:{background:'none',border:'none',fontSize:'9px',fontWeight:'600',color:'var(--text3)',padding:'4px 8px',letterSpacing:'0.5px'},
-        onClick:()=>undoLastSet()},'\u21A9 Undo last set'));
-    }else{actionRow.appendChild(h('div'))}
-    // Form cue (subtle reminder) — use displayId so swap gets correct cues
-    const cues=getFormCues(displayId);
-    if(cues){
-      const randomCue=cues[Math.floor(Math.random()*cues.length)];
-      actionRow.appendChild(h('div',{style:{fontSize:'8px',color:'#ff8500',fontWeight:'600',maxWidth:'55%',textAlign:'right'}},'\u26A0 '+randomCue));
+      bottom.appendChild(h('div',{style:{textAlign:'center',marginBottom:'2px'}},
+        h('button',{style:{background:'none',border:'none',fontSize:'8px',fontWeight:'600',color:'var(--text3)',padding:'2px 8px'},
+          onClick:()=>undoLastSet()},'\u21A9 undo last set')));
     }
-    root.appendChild(actionRow);
+
+    root.appendChild(bottom);
 
     // LOG button
     const btnText=isLastSet?(isLastEx?'LOG SET & FINISH':'LOG & NEXT \u203A'):`LOG SET ${state.currentSet}`;
-    root.appendChild(h('div',{style:{padding:`8px 20px calc(24px + var(--safe-b))`}},
-      h('button',{style:{width:'100%',padding:'14px',borderRadius:'14px',background:isLastSet?(isLastEx?'var(--accent)':day.color):day.color,color:'#fff',fontSize:'15px',fontWeight:'900',letterSpacing:'2px',boxShadow:`0 4px 24px ${day.colorGlow}`},onClick:()=>logSet()},btnText)));
+    root.appendChild(h('div',{style:{padding:`6px 20px calc(20px + var(--safe-b))`}},
+      h('button',{style:{width:'100%',padding:'14px',borderRadius:'14px',background:day.color,color:'#fff',fontSize:'15px',fontWeight:'900',letterSpacing:'2px',boxShadow:`0 4px 20px ${day.colorGlow}`},onClick:()=>logSet()},btnText)));
     return;
   }
 
@@ -1906,7 +1851,7 @@ function render(){
 function openDay(day){state.selectedDay=day;state.sessionSets={};state.sessionSwaps={};state.exIndex=0;stopRest();state.view='day';render()}
 function openExercise(idx){
   const ex=state.selectedDay.exercises[idx];const existing=state.sessionSets[ex.id]||[];
-  state.exIndex=idx;state.currentSet=existing.length+1;state.setTag='normal';
+  state.exIndex=idx;state.currentSet=existing.filter(s=>s.tag!=='warmup').length+1;state.setTag='normal';
   state.showDemo=false;state.showExInfo=false;state.showSwapMenu=false;
   const pr=state.prRecords[ex.id];const last=existing.length>0?existing[existing.length-1]:null;
   state.setWeight=last?last.weight:(pr?pr.weight:0);state.setReps=last?last.reps:(pr?pr.reps:8);

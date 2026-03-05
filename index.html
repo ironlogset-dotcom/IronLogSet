@@ -529,41 +529,127 @@ function getHype(){return HYPE_MSGS[Math.floor(Math.random()*HYPE_MSGS.length)]}
 const FORM_CUES={
   squat:['Brace core tight before descent','Push knees out over toes','Drive through heels'],
   front_squat:['Elbows high, upper back tight','Brace core, stay upright','Control the descent'],
-  deadlift:['Brace core — spine neutral','Hinge at hips, don\u2019t round back','Push floor away with legs'],
+  deadlift:['Brace core \u2014 spine neutral','Hinge at hips, don\u2019t round back','Push floor away with legs'],
   sumo_deadlift:['Wide stance, toes out','Chest up, hips close to bar','Drive knees out'],
   rdl:['Soft knees, hinge at hips','Keep bar close to legs','Feel the hamstring stretch'],
   bb_bench:['Retract shoulder blades','Arch upper back, feet planted','Control the descent to chest'],
-  bb_ohp:['Brace core — don\u2019t lean back','Tuck chin, press straight up','Lock out overhead'],
+  db_bench:['Retract shoulder blades','Don\u2019t let DBs drift wide at bottom','Even press, both arms together'],
+  incline_db:['30\u201345\u00B0 angle only','Retract scapula into bench','Control at the bottom'],
+  incline_bb:['Same setup as flat \u2014 arch, blades back','Don\u2019t flare elbows past 60\u00B0','Touch upper chest'],
+  decline_bench:['Lock legs in securely','Retract shoulder blades','Touch below nipple line'],
+  bb_ohp:['Brace core \u2014 don\u2019t lean back','Tuck chin, press straight up','Lock out overhead'],
+  db_ohp:['Don\u2019t arch lower back','Press slightly inward, not straight out','Full lockout at top'],
   bb_row:['Hinge forward, flat back','Pull to lower chest','Squeeze shoulder blades'],
+  db_row:['Flat back, support on bench','Pull elbow past torso','Don\u2019t rotate trunk'],
+  cs_row:['Chest stays on pad','Pull to lower chest','Squeeze at peak'],
+  pullups:['Dead hang start \u2014 full extension','Drive elbows down, not back','Don\u2019t kip or swing'],
+  weighted_pu:['Dead hang start','Add weight slowly \u2014 protect shoulders','Full ROM every rep'],
+  chinups:['Supinated grip, shoulder width','Pull chin over bar','Control the negative'],
   hip_thrust:['Drive through heels','Squeeze glutes at top','Don\u2019t hyperextend lower back'],
   hack_squat:['Full foot contact on platform','Control the negative','Don\u2019t lock knees violently'],
   leg_press:['Don\u2019t let hips lift off seat','Full range without rounding lower back','Push through heels'],
   bss:['Keep front shin vertical','Brace core for balance','Control the descent'],
   walking_lunge:['Brace core each step','Front knee tracks over ankle','Upright torso'],
-  skull_crush:['Keep elbows fixed — don\u2019t flare','Lower to forehead, not behind','Control the negative'],
+  skull_crush:['Keep elbows fixed \u2014 don\u2019t flare','Lower to forehead, not behind','Control the negative'],
+  tri_overhead:['Keep elbows close to head','Full stretch at bottom','Don\u2019t flare elbows out'],
+  close_grip_bench:['Hands shoulder-width','Keep elbows tucked to sides','Touch lower chest'],
   nordic_curl:['Brace core tight','Control the descent as long as possible','Push back up with hands if needed'],
+  cable_fly:['Slight elbow bend \u2014 locked','Squeeze chest at center','Don\u2019t let weight yank arms back'],
+  lat_pulldown:['Pull to upper chest, not behind neck','Lean back slightly','Squeeze shoulder blades'],
+  upright_row:['Don\u2019t pull above nipple height','Lead with elbows','Stop if shoulders hurt'],
+  arnold_press:['Start palms facing you','Rotate as you press','Full lockout at top'],
+  face_pull:['Pull to forehead level','Externally rotate at the end','Squeeze rear delts'],
+  shrugs:['Straight up \u2014 don\u2019t roll shoulders','Hold at top 1\u20132 sec','Don\u2019t use momentum'],
+  goblet_squat:['Hold DB at chest','Elbows between knees','Sit straight down'],
+  step_up:['Drive through top foot only','Don\u2019t push off back foot','Control the descent'],
 };
 function getFormCues(exId){return FORM_CUES[exId]||null}
 
 // ── Exercise Info Database ──
+// risk: null (safe), 'moderate' (technique-dependent), 'high' (injury-prone if sloppy)
 const EX_INFO={
-  squat:{muscles:'Quads, Glutes, Core',tips:'King of leg exercises. Go to parallel or below for full quad/glute activation. Wider stance hits more glutes, narrow stance hits more quads.'},
-  deadlift:{muscles:'Posterior Chain, Back, Glutes, Hamstrings',tips:'Full-body puller. Keep bar over midfoot, push floor away. Builds overall strength and mass like nothing else.'},
-  bb_bench:{muscles:'Chest, Front Delts, Triceps',tips:'The classic chest builder. Grip width changes emphasis — wider for chest, narrow for triceps. Touch chest and press explosively.'},
-  db_bench:{muscles:'Chest, Front Delts, Triceps',tips:'Greater range of motion than barbell. Each arm works independently, fixing imbalances. Great for chest hypertrophy.'},
-  pullups:{muscles:'Lats, Biceps, Rear Delts, Core',tips:'The ultimate back builder. Wide grip emphasizes lats, chin-up grip adds bicep focus. Dead hang to chin over bar.'},
-  bb_row:{muscles:'Upper Back, Lats, Biceps, Rear Delts',tips:'Bent-over position builds thickness. Pull to different spots — lower chest for lats, upper chest for traps/rhomboids.'},
-  rdl:{muscles:'Hamstrings, Glutes, Lower Back',tips:'The hamstring and glute builder. Keep slight knee bend, push hips back. Feel the stretch, don\u2019t just bend over.'},
-  db_ohp:{muscles:'Shoulders, Triceps, Upper Chest',tips:'Seated or standing. Standing recruits more core. Full range — ear level to lockout. Builds boulder shoulders.'},
-  lat_pulldown:{muscles:'Lats, Biceps, Rear Delts',tips:'Pull-up progression or lat isolation. Pull to upper chest, squeeze shoulder blades. Don\u2019t lean too far back.'},
-  bb_curl:{muscles:'Biceps, Forearms',tips:'Keep elbows pinned at sides. Full extension to full contraction. Don\u2019t swing the weight — strict form builds arms.'},
-  tri_pushdown:{muscles:'Triceps (all 3 heads)',tips:'Lock elbows at sides. Full extension at bottom, squeeze. Rope attachment hits lateral head, bar hits medial.'},
-  lat_raise:{muscles:'Lateral Delts',tips:'The shoulder width builder. Lead with elbows, slight forward lean. Light weight, high reps. Don\u2019t shrug.'},
-  hip_thrust:{muscles:'Glutes, Hamstrings',tips:'The #1 glute builder. Drive through heels, squeeze at top. Upper back on bench, chin tucked.'},
-  cable_fly:{muscles:'Chest (inner/outer)',tips:'Constant tension throughout. Great finisher for chest. Keep slight bend in elbows, squeeze at center.'},
-  leg_ext:{muscles:'Quads (isolation)',tips:'Quad isolation. Pause at top for peak contraction. Don\u2019t use momentum. Great for pre-exhaust or finisher.'},
-  ham_curl:{muscles:'Hamstrings',tips:'Hamstring isolation. Full range of motion. Slow negatives build size. Pair with RDLs for complete hamstring development.'},
-  calf_raise:{muscles:'Calves (gastroc, soleus)',tips:'Full stretch at bottom, hard squeeze at top. Pause 2 seconds at peak. High reps work best for calves.'},
+  // Legs
+  squat:{muscles:'Quads, Glutes, Core',tips:'Go to parallel or below for full activation. Wider stance = more glutes, narrow = more quads. Bar position matters: high bar is quad-dominant, low bar recruits more posterior chain.',risk:'moderate',riskNote:'Lower back and knees. Never round your lower back under load. If you can\u2019t hit depth with a flat back, work on ankle/hip mobility first.'},
+  front_squat:{muscles:'Quads, Upper Back, Core',tips:'More upright than back squat, shifts emphasis to quads. Demands good thoracic mobility. Cross-arm or clean grip.',risk:'moderate',riskNote:'Wrists and upper back. If you can\u2019t keep elbows high, the bar rolls forward and loads your spine.'},
+  deadlift:{muscles:'Posterior Chain, Back, Glutes, Hamstrings',tips:'Keep bar over midfoot. Push floor away rather than pulling the bar up. The strongest full-body movement \u2014 builds everything.',risk:'high',riskNote:'Lower back. A rounded lumbar under heavy load can cause disc injury. If your back rounds, the weight is too heavy. Always brace hard.'},
+  sumo_deadlift:{muscles:'Glutes, Adductors, Quads, Back',tips:'Wider stance, more upright torso than conventional. Leverages hips more. Good for longer-torsoed lifters.',risk:'moderate',riskNote:'Hips and adductors. The wide stance stresses hip joints. Warm up thoroughly and don\u2019t force depth.'},
+  rdl:{muscles:'Hamstrings, Glutes, Lower Back',tips:'Slight knee bend, push hips back. Feel the hamstring stretch. Bar stays close to legs. Stop when you feel a full stretch, not when the bar touches the floor.',risk:'moderate',riskNote:'Lower back. Keep the bar close. If it drifts forward, your back takes over. Use straps if grip fails before your back does.'},
+  leg_press:{muscles:'Quads, Glutes',tips:'Foot placement changes emphasis \u2014 high and wide = glutes, low and narrow = quads. Don\u2019t half-rep it.',risk:'moderate',riskNote:'Lower back and knees. Never let your hips curl off the seat at the bottom \u2014 this rounds your lumbar under massive load.'},
+  hack_squat:{muscles:'Quads, Glutes',tips:'Machine-guided squat that isolates quads. Go deep. Great for building quad sweep without spinal loading.',risk:null},
+  goblet_squat:{muscles:'Quads, Glutes, Core',tips:'Self-limiting \u2014 great for learning squat mechanics. Elbows track inside knees. Perfect warm-up or high-rep finisher.',risk:null},
+  bss:{muscles:'Quads, Glutes (per leg)',tips:'Unilateral \u2014 fixes imbalances. Rear foot elevated. Most of the load should be on the front leg.',risk:null},
+  walking_lunge:{muscles:'Quads, Glutes, Core',tips:'Alternating legs, forward travel. Longer stride = more glute, shorter = more quad. Keep torso upright.',risk:null},
+  hip_thrust:{muscles:'Glutes, Hamstrings',tips:'The #1 glute builder. Upper back on bench, drive through heels, squeeze at top. Chin tucked. Pause at lockout.',risk:null},
+  ham_curl:{muscles:'Hamstrings',tips:'Isolation for hamstrings. Slow negatives build size. Pair with RDLs for complete hamstring development \u2014 curls hit the knee-flexion function, RDLs hit hip extension.',risk:null},
+  leg_ext:{muscles:'Quads (isolation)',tips:'Pause at top for peak contraction. Don\u2019t use momentum. Great pre-exhaust before squats or finisher after.',risk:'moderate',riskNote:'Knees. Heavy leg extensions put shear force on the ACL. Use moderate weight, controlled tempo, and full ROM.'},
+  calf_raise:{muscles:'Calves (gastroc + soleus)',tips:'Full stretch at bottom, hard squeeze at top. 2-second pause at peak. High reps (15\u201330) work best. Standing hits gastroc, seated hits soleus.',risk:null},
+  nordic_curl:{muscles:'Hamstrings (eccentric)',tips:'One of the best hamstring injury prevention exercises. Control the descent as long as possible. Push off hands to get back up if needed.',risk:'moderate',riskNote:'Hamstring strain if you go too fast too soon. Build up slowly \u2014 your hammies need to adapt to the eccentric load.'},
+  step_up:{muscles:'Quads, Glutes (per leg)',tips:'Drive through the top foot only. Don\u2019t push off the bottom foot \u2014 that\u2019s cheating. Control the descent.',risk:null},
+  // Chest
+  bb_bench:{muscles:'Chest, Front Delts, Triceps',tips:'Retract shoulder blades, slight arch, feet planted. Grip width changes emphasis \u2014 wider for chest, narrow for triceps. Touch chest, press explosively.',risk:'moderate',riskNote:'Shoulders. Flaring elbows past 90\u00B0 stresses the shoulder joint. Tuck elbows to ~45\u00B0. Always use a spotter or safeties for heavy sets.'},
+  db_bench:{muscles:'Chest, Front Delts, Triceps',tips:'Greater range of motion than barbell. Each arm works independently, fixing imbalances. Don\u2019t let DBs drift too wide at the bottom.',risk:null},
+  incline_db:{muscles:'Upper Chest, Front Delts, Triceps',tips:'30\u201345\u00B0 is the sweet spot. Steeper = more shoulder, less chest. Retract scapula into bench. Great for upper chest development.',risk:null},
+  incline_bb:{muscles:'Upper Chest, Front Delts, Triceps',tips:'Hits the clavicular head of the pec. Same setup cues as flat bench but touch higher on chest.',risk:null},
+  decline_bench:{muscles:'Lower Chest, Triceps',tips:'Emphasizes lower pec fibers. Smaller range of motion = generally can handle more weight. Secure legs before unracking.',risk:null},
+  cable_fly:{muscles:'Chest (inner/outer)',tips:'Constant tension throughout the range. Great finisher. Slight elbow bend, locked in place \u2014 your arms are hooks.',risk:null},
+  db_fly:{muscles:'Chest, Front Delts',tips:'Deep stretch at bottom builds pec. Don\u2019t go too heavy \u2014 this is a stretch-and-squeeze movement, not a press.',risk:'moderate',riskNote:'Shoulders. Going too heavy or too deep can strain the pec-delt tie-in. Use a weight you can control through the full range.'},
+  chest_dip:{muscles:'Lower Chest, Triceps, Front Delts',tips:'Lean forward for chest emphasis. Upright = more triceps. Go to at least 90\u00B0 elbow bend.',risk:'moderate',riskNote:'Shoulders. Deep dips can stress the anterior shoulder capsule. Stop if you feel pinching. Don\u2019t go past the point of shoulder comfort.'},
+  machine_press:{muscles:'Chest, Triceps',tips:'Good for isolating chest without stabilizer fatigue. Press through the movement, squeeze at peak.',risk:null},
+  pec_deck:{muscles:'Chest (isolation)',tips:'Same as cable fly but machine-guided. Squeeze hard at center. Don\u2019t let arms go too far back \u2014 stop when you feel a stretch.',risk:null},
+  pushups:{muscles:'Chest, Triceps, Front Delts, Core',tips:'The original chest builder. Hands slightly wider than shoulders. Body straight \u2014 don\u2019t sag or pike. Scale with elevation or added weight.',risk:null},
+  landmine_press:{muscles:'Upper Chest, Front Delts, Core',tips:'Angled press that\u2019s shoulder-friendly. Great for people who get shoulder pain from flat pressing. One or two hands.',risk:null},
+  // Back
+  pullups:{muscles:'Lats, Biceps, Rear Delts, Core',tips:'The ultimate back builder. Wide grip = lat width, neutral grip = overall back, chin-up grip = more bicep. Dead hang to chin over bar.',risk:null},
+  weighted_pu:{muscles:'Lats, Biceps, Core',tips:'Add weight gradually \u2014 belt or DB between feet. Strict form matters more than ever. The best lat builder there is.',risk:'moderate',riskNote:'Shoulders and elbows. Heavy weighted pull-ups load the shoulder joint hard. Warm up well, progress slowly, stop at any joint pain.'},
+  chinups:{muscles:'Lats, Biceps, Forearms',tips:'Supinated grip targets biceps more. Otherwise same as pull-ups. Great for arm development.',risk:null},
+  lat_pulldown:{muscles:'Lats, Biceps, Rear Delts',tips:'Pull-up progression or lat isolation. Pull to upper chest, lean back slightly, squeeze shoulder blades. Never pull behind the neck.',risk:null},
+  bb_row:{muscles:'Upper Back, Lats, Biceps, Rear Delts',tips:'Bent-over position builds thickness. Pull to lower chest for lats, upper chest for traps/rhomboids. Keep back flat.',risk:'moderate',riskNote:'Lower back. You\u2019re bent over holding heavy weight. If your back rounds, you\u2019re loading your discs. Use straps if grip limits you.'},
+  db_row:{muscles:'Lats, Upper Back, Biceps',tips:'One arm at a time, supported on bench. Pull elbow past torso for full contraction. Don\u2019t rotate your trunk to cheat.',risk:null},
+  cs_row:{muscles:'Mid Back, Lats, Rear Delts',tips:'Chest-supported = no lower back stress. Pure back isolation. Squeeze shoulder blades hard at the top.',risk:null},
+  cable_row:{muscles:'Mid Back, Lats, Biceps',tips:'Sit upright, pull to lower chest/upper belly. Don\u2019t swing your torso \u2014 the back does the work, not momentum.',risk:null},
+  sa_pulldown:{muscles:'Lats (isolation)',tips:'Arms stay straight (slight bend). Pull the bar down in an arc. Great mind-muscle connection for lats.',risk:null},
+  t_bar_row:{muscles:'Upper/Mid Back, Lats',tips:'Similar to barbell row but easier on lower back. Chest against pad if available. Squeeze at the top.',risk:null},
+  face_pull:{muscles:'Rear Delts, Rotator Cuff, Mid Traps',tips:'Pull rope to forehead, externally rotate at the end. Essential for shoulder health. Do these every session.',risk:null},
+  seal_row:{muscles:'Upper Back, Lats',tips:'Lying face-down on elevated bench. Zero lower back involvement. Pure rowing movement.',risk:null},
+  rack_pull:{muscles:'Upper Back, Traps, Glutes',tips:'Partial deadlift from knee height. Overloads the lockout. Good for back thickness and grip.',risk:'moderate',riskNote:'Lower back. Same risk as deadlift but from a stronger position. Still brace hard and maintain neutral spine.'},
+  // Shoulders
+  db_ohp:{muscles:'Shoulders, Triceps, Upper Chest',tips:'Seated or standing. Standing recruits more core. Full range \u2014 ear level to lockout. Don\u2019t arch your lower back.',risk:null},
+  bb_ohp:{muscles:'Shoulders, Triceps, Core',tips:'The gold standard shoulder builder. Strict press, no leg drive. Tuck chin, press straight up. Builds real strength.',risk:'moderate',riskNote:'Shoulders and lower back. Heavy overhead work can aggravate shoulder impingement. Don\u2019t press behind the neck. Stop if you feel pinching.'},
+  lat_raise:{muscles:'Lateral Delts',tips:'The shoulder width builder. Lead with elbows, slight forward lean. Light weight, high reps (12\u201320). Don\u2019t shrug.',risk:null},
+  cable_lat_raise:{muscles:'Lateral Delts',tips:'Constant tension vs dumbbells. Better resistance curve. Cross body (behind or in front) or same-side.',risk:null},
+  front_raise:{muscles:'Front Delts',tips:'Usually not needed \u2014 front delts get hit by all pressing. If you do them, don\u2019t go above eye level.',risk:null},
+  rear_delt_fly:{muscles:'Rear Delts, Mid Traps',tips:'Bent over or on incline bench. Squeeze shoulder blades. Most people neglect rear delts \u2014 don\u2019t be most people.',risk:null},
+  arnold_press:{muscles:'All 3 Delt Heads, Triceps',tips:'Start palms facing you, rotate as you press. Hits front and lateral delts through the rotation. Full range.',risk:null},
+  upright_row:{muscles:'Lateral Delts, Traps',tips:'Pull to nipple height max. Wide grip = more delts, narrow = more traps.',risk:'high',riskNote:'Shoulders. Internally rotating under load compresses the supraspinatus tendon. If you feel any shoulder pinching, stop immediately. Lateral raises are safer for the same muscle.'},
+  machine_ohp:{muscles:'Shoulders, Triceps',tips:'Machine-guided pressing. Good for isolating shoulders when fatigued. Full range of motion.',risk:null},
+  shrugs:{muscles:'Upper Traps',tips:'Straight up \u2014 never roll shoulders. Hold at the top for 1\u20132 seconds. Straps allow heavier loads.',risk:null},
+  // Biceps
+  bb_curl:{muscles:'Biceps, Forearms',tips:'Keep elbows pinned at sides. Full extension to full contraction. Strict form builds arms \u2014 don\u2019t ego curl.',risk:null},
+  db_curl:{muscles:'Biceps',tips:'Alternating or together. Supinate (rotate) at the top for peak contraction. Don\u2019t swing.',risk:null},
+  hammer_curl:{muscles:'Brachialis, Biceps, Forearms',tips:'Neutral grip targets the brachialis (under the bicep). Builds arm thickness and forearm size.',risk:null},
+  zottman_curl:{muscles:'Biceps (concentric), Forearms (eccentric)',tips:'Curl up supinated, rotate to pronated, lower slowly. The slow pronated negative torches forearms.',risk:null},
+  preacher_curl:{muscles:'Biceps (long head)',tips:'Pad prevents cheating. Full stretch at bottom. Don\u2019t hyperextend \u2014 control the negative.',risk:'moderate',riskNote:'Bicep tendon. The full stretch position under load can strain the distal bicep tendon. Never bounce at the bottom or jerk the weight.'},
+  cable_curl:{muscles:'Biceps',tips:'Constant tension throughout the range. Great finisher. Squeeze hard at the top.',risk:null},
+  incline_curl:{muscles:'Biceps (long head)',tips:'Bench at 45\u201360\u00B0. Arms hang straight down. The stretch position builds the bicep peak.',risk:null},
+  spider_curl:{muscles:'Biceps (short head)',tips:'Chest against incline bench, arms hanging forward. Eliminates all momentum. Pure contraction.',risk:null},
+  conc_curl:{muscles:'Biceps',tips:'Elbow braced against inner thigh. Isolates one arm at a time. Peak contraction focus.',risk:null},
+  // Triceps
+  skull_crush:{muscles:'Triceps (long head)',tips:'Lower to forehead or just behind. Keep elbows fixed. The stretch on the long head is what makes this exercise effective.',risk:'moderate',riskNote:'Elbows. Can cause elbow tendinitis with heavy weight or poor form. If elbows hurt, switch to overhead extensions or pushdowns.'},
+  tri_pushdown:{muscles:'Triceps (all 3 heads)',tips:'Lock elbows at sides. Full extension at bottom, squeeze. Rope = lateral head, bar = medial head.',risk:null},
+  tri_overhead:{muscles:'Triceps (long head)',tips:'The best long head stretch. Keep elbows close to head. Full stretch at bottom, lock out at top.',risk:null},
+  close_grip_bench:{muscles:'Triceps, Inner Chest',tips:'Hands shoulder-width on barbell. Elbows tucked to sides. Touch lower chest. Heavy compound tricep builder.',risk:null},
+  tri_dip:{muscles:'Triceps, Front Delts',tips:'Upright torso for tricep focus. Go to 90\u00B0 elbow bend minimum. Add weight when bodyweight is easy.',risk:'moderate',riskNote:'Shoulders. Same risk as chest dips. Don\u2019t go too deep if you have shoulder issues.'},
+  tri_kickback:{muscles:'Triceps',tips:'Upper arm locked parallel to torso. Only forearm moves. Squeeze at full extension. Light weight.',risk:null},
+  // Core
+  suitcase_carry:{muscles:'Obliques, Core, Grip',tips:'Walk tall, don\u2019t lean toward the weight. Anti-lateral flexion. Great for real-world core strength.',risk:null},
+  pallof_press:{muscles:'Core (anti-rotation)',tips:'Press out from chest, hold. Resist the rotation. The further you press, the harder it is.',risk:null},
+  copenhagen:{muscles:'Adductors, Obliques',tips:'Top leg on bench, bottom leg hanging. Brutally effective for groin strength and injury prevention.',risk:null},
+  dead_bug:{muscles:'Deep Core, Hip Flexors',tips:'Press lower back into floor. Opposite arm and leg extend. If your back arches off the floor, you\u2019ve gone too far.',risk:null},
+  hanging_leg_raise:{muscles:'Lower Abs, Hip Flexors',tips:'Hang from bar, curl pelvis up (not just legs). Slow and controlled. The pelvic tilt is what hits abs.',risk:null},
+  ab_wheel:{muscles:'Core (entire chain)',tips:'Start from knees. Roll out slowly, maintain hollow body. Don\u2019t let hips sag. One of the best core exercises.',risk:'moderate',riskNote:'Lower back. If your core gives out mid-rep, your lower back takes over. Only go as far as you can control.'},
+  plank:{muscles:'Core (isometric)',tips:'Elbows under shoulders, body straight. Squeeze everything \u2014 glutes, quads, core. Don\u2019t sag or pike.',risk:null},
+  cable_crunch:{muscles:'Upper Abs',tips:'Kneel, curl spine (don\u2019t hinge at hips). Think about bringing ribs to pelvis.',risk:null},
+  farmers_carry:{muscles:'Traps, Core, Grip, Full Body',tips:'Walk tall, tight core, controlled steps. Heavier = more grip/trap work. One of the most functional exercises.',risk:null},
 };
 function getExInfo(exId){return EX_INFO[exId]||null}
 
@@ -1127,12 +1213,25 @@ function render(){
         const exInfo=getExInfo(displayId);
         const infoBox=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'12px',padding:'12px',textAlign:'left'}});
         if(exInfo){
-          infoBox.appendChild(h('div',{style:{fontSize:'11px',color:'var(--text)',fontWeight:'600',marginBottom:'6px'}},exInfo.muscles));
-          infoBox.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)',lineHeight:'1.5'}},exInfo.tips));
-        }else{infoBox.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)'}},'No info available.'))}
+          // Muscles
+          infoBox.appendChild(h('div',{style:{fontSize:'8px',fontWeight:'700',letterSpacing:'1.5px',color:day.color,marginBottom:'3px'}},'TARGET'));
+          infoBox.appendChild(h('div',{style:{fontSize:'11px',color:'var(--text)',fontWeight:'600',marginBottom:'8px'}},exInfo.muscles));
+          // Tips
+          infoBox.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)',lineHeight:'1.5',marginBottom:'6px'}},exInfo.tips));
+          // Injury risk warning
+          if(exInfo.risk){
+            const riskCol=exInfo.risk==='high'?'#ff3d3d':'#ff8500';
+            const riskBg=exInfo.risk==='high'?'rgba(255,61,61,0.06)':'rgba(255,133,0,0.06)';
+            const riskBorder=exInfo.risk==='high'?'rgba(255,61,61,0.2)':'rgba(255,133,0,0.2)';
+            infoBox.appendChild(h('div',{style:{background:riskBg,border:`1px solid ${riskBorder}`,borderRadius:'8px',padding:'8px 10px',marginTop:'4px'}},
+              h('div',{style:{fontSize:'8px',fontWeight:'800',letterSpacing:'1.5px',color:riskCol,marginBottom:'3px'}},exInfo.risk==='high'?'\u26A0\uFE0F HIGHER INJURY RISK':'\u26A0 TECHNIQUE-SENSITIVE'),
+              h('div',{style:{fontSize:'10px',color:'var(--text2)',lineHeight:'1.5'}},exInfo.riskNote)));
+          }
+        }else{infoBox.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)'}},'No info available for this exercise.'))}
+        // Form cues
         const cuesInfo=getFormCues(displayId);
-        if(cuesInfo){infoBox.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'700',color:'#ff8500',marginTop:'8px',marginBottom:'4px'}},'\u26A0 FORM CUES'));
-          cuesInfo.forEach(c=>infoBox.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text2)',padding:'2px 0 2px 10px',borderLeft:'2px solid rgba(255,133,0,0.25)',marginBottom:'3px'}},c)))}
+        if(cuesInfo){infoBox.appendChild(h('div',{style:{fontSize:'8px',fontWeight:'700',letterSpacing:'1.5px',color:'var(--text3)',marginTop:'10px',marginBottom:'4px'}},'FORM CUES'));
+          cuesInfo.forEach(c=>infoBox.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text2)',padding:'2px 0 2px 10px',borderLeft:`2px solid ${day.color}30`,marginBottom:'3px'}},c)))}
         panel.appendChild(infoBox);
       }
       if(state.showSwapMenu&&SUBSTITUTION_MAP[ex.id]){

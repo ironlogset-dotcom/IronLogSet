@@ -350,7 +350,7 @@ function save(){store.set('prs',state.prRecords);store.set('history',state.histo
 
 // ── Audio (Web Audio API) ──
 let audioCtx=null;
-function ensureAudio(){if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}return audioCtx}
+function ensureAudio(){if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();return audioCtx}
 document.addEventListener('touchstart',ensureAudio,{once:true});
 document.addEventListener('click',ensureAudio,{once:true});
 function playDing(){

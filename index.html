@@ -357,20 +357,24 @@ function playDing(){
   try{
     const ctx=ensureAudio();if(!ctx)return;
     const t=ctx.currentTime;
-    [880,1100].forEach((freq,i)=>{
-      const osc=ctx.createOscillator();const gain=ctx.createGain();
-      osc.connect(gain);gain.connect(ctx.destination);
-      osc.type='sine';osc.frequency.value=freq;
-      const s=t+i*0.3;
-      gain.gain.setValueAtTime(0.25,s);gain.gain.exponentialRampToValueAtTime(0.001,s+0.5);
-      osc.start(s);osc.stop(s+0.6);
-    });
+    const osc=ctx.createOscillator();const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.type='sine';osc.frequency.value=660;
+    gain.gain.setValueAtTime(0.12,t);gain.gain.exponentialRampToValueAtTime(0.001,t+0.4);
+    osc.start(t);osc.stop(t+0.5);
   }catch(e){}
+}
+function notifyRestDone(){
+  playDing();
+  if('Notification' in window&&Notification.permission==='granted'){
+    try{navigator.serviceWorker.ready.then(reg=>{reg.showNotification('Iron Log',{body:'Rest complete! Go time.',icon:'./icon-192.png',tag:'rest-done',renotify:true})})}catch(e){}
+  }
 }
 
 // ── Rest Timer (timestamp-based — survives backgrounding) ──
 function startRest(){
   stopRest();
+  if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();
   state.restEndTime=Date.now()+state.restSeconds*1000;
   state.restActive=true;
   function tick(){
@@ -383,7 +387,7 @@ function startRest(){
     if(remaining<=0){
       state.restActive=false;state.restRemaining=0;state.restEndTime=null;state.restInterval=null;
       try{if(navigator.vibrate)navigator.vibrate([200,100,200])}catch{}
-      playDing();
+      notifyRestDone();
       showToast('\u23F0 Rest complete! Go time.');
       render();
     }else{state.restInterval=setTimeout(tick,250)}

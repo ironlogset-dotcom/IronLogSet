@@ -169,8 +169,22 @@ const LIB_CATEGORIES=['Chest','Back','Shoulders','Biceps','Triceps','Legs','Core
 const DAY_ICONS=['\u{1F525}','\u{1F4A5}','\u26A1','\u{1F4AA}','\u{1F3CB}','\u2B50','\u{1F680}','\u{1F9E0}','\u2764\uFE0F','\u{1F4A8}','\u{1F94A}','\u{1F3AF}'];
 const DAY_COLORS=['#4d8df7','#ff3d3d','#3dd68c','#c45fff','#ff8500','#ffb800','#00c9db','#ff5599','#8866ff','#44ddaa'];
 
-// ── Assisted Exercises ──
+// ── Assisted / Bodyweight Exercises ──
 const ASSISTED_EXERCISES=new Set(['pullups','weighted_pu','chinups','tri_dip','chest_dip','nordic_curl']);
+const BW_EXERCISES=new Set(['pullups','weighted_pu','chinups','tri_dip','chest_dip','pushups','nordic_curl']);
+
+// ── Skill Level Config ──
+const SKILL_CONFIG={
+  novice:{label:'NOVICE',setsAdjust:-1,minSets:2,repBump:2,deloadWeeks:6,
+    desc:'Fewer sets per exercise. Rep ranges shifted slightly higher to build form and work capacity. Deload detection is more lenient.',
+    warn:new Set(['squat','deadlift','bb_row','ohp','front_squat','snatch','clean','bb_bench'])},
+  intermediate:{label:'INTERMEDIATE',setsAdjust:0,minSets:2,repBump:0,deloadWeeks:5,
+    desc:'Standard programming. Balanced set/rep prescriptions. Normal deload sensitivity.',
+    warn:new Set()},
+  advanced:{label:'ADVANCED',setsAdjust:1,minSets:3,repBump:-1,deloadWeeks:4,
+    desc:'Extra volume per exercise. Rep ranges shifted lower for strength emphasis. More aggressive deload detection for accumulated fatigue.',
+    warn:new Set()}
+};
 
 // ── Exercise Substitution Map ──
 const SUBSTITUTION_MAP={
@@ -205,7 +219,7 @@ const RECREATIONAL_ACTIVITIES=[
   {cat:'Team Sports',icon:'\u26BD',activities:[{name:'Basketball',met:6.5},{name:'Soccer',met:7.0}]},
   {cat:'Cardio',icon:'\u{1F3C3}',activities:[{name:'Running',met:9.8},{name:'Cycling',met:7.5},{name:'Walking',met:3.5},{name:'Jump Rope',met:11.0},{name:'Rowing',met:7.0}]},
 ];
-const ACTIVITY_DURATIONS=[15,20,30,45,60,75,90];
+const ACTIVITY_DURATIONS=[];for(let i=5;i<=240;i+=5)ACTIVITY_DURATIONS.push(i);
 
 // ── Program Templates ──
 const PROGRAM_TEMPLATES=[
@@ -318,14 +332,16 @@ let state={
   wakeLockEnabled:false, wakeLockSentinel:null,
   wakeLockVideo:null, // iOS fallback
   progressPics:[], // [{date,dayName,dataUrl}]
-  hypeEnabled:true,
-  profile:{weight:'',weightUnit:'lbs',heightFt:'',heightIn:'',skillLevel:''},
+  profile:{weight:'',weightUnit:'lbs',skillLevel:''},
   // New features
   restEndTime:null, // timestamp-based timer
   setAssistWeight:0, // assisted movement weight
   sessionSwaps:{}, // {originalExId: {subId, subName}} session-only swaps
   showSwapMenu:false,
+  homeTab:'train', // 'train' | 'insights'
   deloadDismiss:null, // ISO timestamp when user dismissed deload card
+  deloadActive:null, // {strategy:'light'|'volume'|'easy', startDate:ISO, endDate:ISO}
+  lastWeights:{}, // {exId: {weight, reps, date}}
   activityDuration:45, // minutes for activity logging
   activityCat:null, // filter for activity view
   selectedActivity:null, // {name, met, icon, cat}
@@ -341,6 +357,10 @@ function genId(){return 'ex_'+Date.now()+'_'+Math.random().toString(36).slice(2,
 function genDayId(){return 'day_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)}
 function timeSince(ds){const d=Math.floor((Date.now()-new Date(ds).getTime())/864e5);return d===0?'Today':d===1?'Yesterday':`${d}d ago`}
 function fmtDate(ds){return new Date(ds).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
+function getSkill(){return SKILL_CONFIG[state.profile.skillLevel]||SKILL_CONFIG.intermediate}
+function skillSets(base){const sk=getSkill();return Math.max(sk.minSets,base+sk.setsAdjust)}
+function skillRepRange(range){const sk=getSkill();if(!sk.repBump)return range;const rm=range.match(/^(\d+)\s*-\s*(\d+)(.*)/);if(rm){let lo=Math.max(1,parseInt(rm[1])-sk.repBump),hi=Math.max(lo,parseInt(rm[2])-sk.repBump);return`${lo}-${hi}${rm[3]||''}`}return range}
+function relStrength(weight){const bw=parseFloat(state.profile.weight);if(!bw||!weight)return'';return(weight/bw).toFixed(1)+'x BW'}
 function fmtDateShort(ds){return new Date(ds).toLocaleDateString('en-US',{month:'numeric',day:'numeric'})}
 function getTodayWD(){return WEEKDAYS[((new Date().getDay()+6)%7)]}
 function getRpeColor(rpe){const c={1:'#3dd68c',2:'#3dd68c',3:'#5ae0a0',4:'#7de8b0',5:'#ffb800',6:'#ffa200',7:'#ff8500',8:'#ff5533',9:'#ff3d3d',10:'#ff1a1a'};return c[rpe]||'#888'}
@@ -353,7 +373,7 @@ function showToast(msg){
   tc.appendChild(h('div',{className:'toast'},h('span',{},msg)));
   state.toastTimer=setTimeout(()=>{tc.innerHTML='';state.toastMsg=null},2800);
 }
-function save(){store.set('prs',state.prRecords);store.set('history',state.history);store.set('days',state.days);store.set('rest',state.restSeconds);store.set('customEx',state.customExercises);store.set('exNotes',state.exerciseNotes);store.set('hype',state.hypeEnabled);store.set('profile',state.profile)}
+function save(){store.set('prs',state.prRecords);store.set('history',state.history);store.set('days',state.days);store.set('rest',state.restSeconds);store.set('customEx',state.customExercises);store.set('exNotes',state.exerciseNotes);store.set('profile',state.profile);store.set('lastWeights',state.lastWeights);store.set('deloadActive',state.deloadActive)}
 
 // ── Audio (Web Audio API) ──
 let audioCtx=null;
@@ -516,14 +536,6 @@ function createPicker(options,value,onChange,label,format,color){
   return container;
 }
 
-// ── Hype Messages ──
-const HYPE_MSGS=[
-  'CRUSHED IT! \u{1F4AA}','BEAST MODE!','THAT\u2019S HOW IT\u2019S DONE!','STRONG REP!',
-  'KEEP GRINDING!','IRON THERAPY! \u{1F525}','LETS GO!','NO QUIT IN YOU!',
-  'PR MINDSET!','FEELING DANGEROUS!','EARNED NOT GIVEN!','ONE MORE DOWN!',
-  'BUILT DIFFERENT!','WORK PAYS OFF!','LIGHTWEIGHT BABY!','YEAH BUDDY!',
-  'PURE STRENGTH!','DOMINATING!','ANOTHER ONE! \u{1F525}','UNSTOPPABLE!'];
-function getHype(){return HYPE_MSGS[Math.floor(Math.random()*HYPE_MSGS.length)]}
 
 // ── Form Cues (exercise-specific safety reminders) ──
 const FORM_CUES={
@@ -790,10 +802,12 @@ function checkDeload(){
     const ra=r3.reduce((a,s)=>a+s.rpe,0)/r3.length;const pa=p3.reduce((a,s)=>a+s.rpe,0)/p3.length;
     if(ra>=8&&ra-pa>=1.5)return{needed:true,reason:`Avg session RPE rose to ${ra.toFixed(1)} \u2014 up ${(ra-pa).toFixed(1)} pts from your previous baseline. Your body is accumulating fatigue.`};
   }
-  // 2. Consistent heavy volume
-  const sixWks=Date.now()-42*864e5;
-  const n6=liftSessions.filter(s=>new Date(s.date).getTime()>sixWks).length;
-  if(n6>=12)return{needed:true,reason:`${n6} lifting sessions in the last 6 weeks. Consistent heavy training demands a periodic deload.`};
+  // 2. Consistent heavy volume (skill-adjusted threshold)
+  const sk=getSkill();const deloadWks=sk.deloadWeeks||5;
+  const periodMs=deloadWks*7*864e5;
+  const threshold=Math.round(deloadWks*2);
+  const nPeriod=liftSessions.filter(s=>new Date(s.date).getTime()>Date.now()-periodMs).length;
+  if(nPeriod>=threshold)return{needed:true,reason:`${nPeriod} lifting sessions in ${deloadWks} weeks. Consistent heavy training demands a periodic deload.`};
   // 3. PR stagnation
   if(liftSessions.length>=8&&Object.keys(state.prRecords).length>0){
     const dates=Object.values(state.prRecords).map(p=>new Date(p.date).getTime());
@@ -801,6 +815,46 @@ function checkDeload(){
     if(days>=21)return{needed:true,reason:`No new PRs in ${days} days across ${liftSessions.length} sessions. Accumulated fatigue may be blunting your progress.`};
   }
   return{needed:false};
+}
+
+// ── Deload Helpers ──
+const DELOAD_STRATEGIES=[
+  {id:'light',name:'LIGHT WEEK',desc:'Same exercises & sets. All weights reduced to 50%.',icon:'\u{1F4A1}',color:'#4d8df7',
+    apply:(w)=>Math.round(w*0.5/5)*5, setsModify:(s)=>s},
+  {id:'volume',name:'VOLUME CUT',desc:'Same exercises & weights. Sets cut in half (min 2).',icon:'\u2702\uFE0F',color:'#3dd68c',
+    apply:(w)=>w, setsModify:(s)=>Math.max(2,Math.ceil(s/2))},
+  {id:'easy',name:'EASY WEEK',desc:'Weights at 60%, sets reduced by 1. The full reset.',icon:'\u{1F9D8}',color:'#c45fff',
+    apply:(w)=>Math.round(w*0.6/5)*5, setsModify:(s)=>Math.max(2,s-1)}
+];
+function getDeloadStrategy(id){return DELOAD_STRATEGIES.find(s=>s.id===id)}
+function getDeloadWeight(exId,strategy){
+  const last=state.lastWeights[exId];const pr=state.prRecords[exId];
+  const baseWeight=last?last.weight:(pr?pr.weight:0);
+  if(!baseWeight)return 0;
+  const strat=getDeloadStrategy(strategy);
+  return strat?strat.apply(baseWeight):baseWeight;
+}
+function getDeloadSets(originalSets,strategy){
+  const strat=getDeloadStrategy(strategy);
+  return strat?strat.setsModify(originalSets):originalSets;
+}
+function isDeloadActive(){return state.deloadActive&&new Date(state.deloadActive.endDate).getTime()>Date.now()}
+function deloadDaysLeft(){
+  if(!isDeloadActive())return 0;
+  return Math.ceil((new Date(state.deloadActive.endDate).getTime()-Date.now())/864e5);
+}
+function activateDeload(strategyId){
+  const now=new Date();const end=new Date(now.getTime()+7*864e5);
+  state.deloadActive={strategy:strategyId,startDate:now.toISOString(),endDate:end.toISOString()};
+  state.deloadDismiss=now.toISOString();
+  store.set('deloadActive',state.deloadActive);store.set('deloadDismiss',state.deloadDismiss);
+  state.view='home';render();
+  showToast('Deload week activated!');
+}
+function endDeload(){
+  state.deloadActive=null;store.set('deloadActive',null);
+  state.view='home';render();
+  showToast('Deload ended \u2014 back to full power');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -818,7 +872,8 @@ function render(){
 
   // ═══════════════ HOME ═══════════════
   if(state.view==='home'){
-    root.appendChild(h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'24px'}},
+    // Header
+    root.appendChild(h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'16px'}},
       h('div',{style:{display:'flex',alignItems:'center',gap:'10px'}},h('span',{style:{fontSize:'24px'}},'\u26A1'),h('span',{style:{fontSize:'22px',fontWeight:'900',letterSpacing:'5px',color:'var(--accent)'}}, 'IRON LOG')),
       h('div',{style:{display:'flex',gap:'8px'}},
         h('button',{style:{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'10px',width:'42px',height:'42px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'18px'},onClick:()=>captureProgressPic('Home')},'\u{1F4F8}'),
@@ -826,92 +881,170 @@ function render(){
         h('button',{style:{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'10px',width:'42px',height:'42px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'18px'},onClick:()=>{state.view='settings';render()}},'\u2699\uFE0F'))
     ));
 
-    // Stats row
-    const stats=h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'10px',marginBottom:'24px'}});
-    [{val:totalWorkouts,label:'SESSIONS',color:'var(--text)'},{val:totalPrs,label:'PRs SET',color:'var(--gold)'},{val:last?timeSince(last.date):'\u2014',label:'LAST',color:'var(--text2)'}].forEach(s=>{
-      stats.appendChild(h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'12px',padding:'14px 8px',textAlign:'center'}},
-        h('div',{style:{fontSize:typeof s.val==='number'?'24px':'13px',fontWeight:'900',color:s.color}},String(s.val)),
-        h('div',{style:{fontSize:'8px',fontWeight:'700',letterSpacing:'2px',color:'var(--text3)',marginTop:'4px'}},s.label)));
-    });root.appendChild(stats);
+    // Tabs
+    const tab=state.homeTab||'train';
+    const tabs=h('div',{style:{display:'flex',gap:'0',marginBottom:'20px',background:'var(--bg2)',borderRadius:'10px',padding:'3px',border:'1px solid var(--border)'}});
+    [['train','TRAIN'],['insights','INSIGHTS']].forEach(([id,label])=>{
+      const active=tab===id;
+      tabs.appendChild(h('button',{style:{flex:'1',padding:'8px',borderRadius:'8px',fontSize:'10px',fontWeight:'800',letterSpacing:'1.5px',
+        background:active?'var(--card)':'transparent',color:active?'var(--text)':'var(--text3)',
+        border:active?'1px solid var(--border)':'1px solid transparent',transition:'all 0.2s'},
+        onClick:()=>{state.homeTab=id;render()}},label));
+    });
+    root.appendChild(tabs);
 
-    // Profile chip (only if profile has data)
-    const p=state.profile;
-    if(p.weight||p.heightFt||p.skillLevel){
-      const chips=[];
-      if(p.skillLevel)chips.push(p.skillLevel.toUpperCase());
-      if(p.weight)chips.push(`${p.weight} ${p.weightUnit}`);
-      if(p.heightFt)chips.push(`${p.heightFt}'${p.heightIn||0}"`);
-      root.appendChild(h('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap',marginBottom:'16px',marginTop:'-10px'},onClick:()=>{state.view='settings';render()}},
-        chips.map(c=>h('div',{style:{padding:'4px 10px',borderRadius:'20px',background:'var(--card)',border:'1px solid var(--border)',fontSize:'10px',fontWeight:'700',color:'var(--text3)',letterSpacing:'0.5px'}},c))));
+    // ── TRAIN TAB ──
+    if(tab==='train'){
+      // Deload banners (important, stay on train tab)
+      if(isDeloadActive()){
+        const strat=getDeloadStrategy(state.deloadActive.strategy);
+        const dl=deloadDaysLeft();
+        root.appendChild(h('div',{style:{background:`${strat.color}12`,border:`1px solid ${strat.color}40`,borderRadius:'14px',padding:'14px 16px',marginBottom:'16px'}},
+          h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px'}},
+            h('div',{style:{fontSize:'13px',fontWeight:'800',color:strat.color}},`${strat.icon} DELOAD ACTIVE \u2014 ${strat.name}`),
+            h('div',{style:{fontSize:'11px',fontWeight:'700',color:'var(--text3)'}},`${dl} day${dl!==1?'s':''} left`)),
+          h('div',{style:{display:'flex',gap:'8px'}},
+            h('button',{style:{flex:'1',padding:'8px',borderRadius:'8px',background:strat.color,color:'#fff',fontSize:'11px',fontWeight:'700',letterSpacing:'0.5px'},onClick:()=>{state.view='deloadPlan';render()}},'VIEW PLAN'),
+            h('button',{style:{padding:'8px 14px',borderRadius:'8px',background:'rgba(255,255,255,0.06)',border:'1px solid var(--border)',color:'var(--text3)',fontSize:'11px',fontWeight:'600'},onClick:()=>{if(confirm('End deload early?'))endDeload()}},'END EARLY'))));
+      }
+      const deload=checkDeload();
+      if(deload.needed&&!isDeloadActive()){
+        root.appendChild(h('div',{style:{background:'rgba(255,133,0,0.08)',border:'1px solid rgba(255,133,0,0.3)',borderRadius:'14px',padding:'14px 16px',marginBottom:'16px'}},
+          h('div',{style:{fontSize:'13px',fontWeight:'800',color:'#ff8500',marginBottom:'6px'}},'\u26A0\uFE0F DELOAD RECOMMENDED'),
+          h('div',{style:{fontSize:'11px',color:'var(--text2)',marginBottom:'10px',lineHeight:'1.5'}},deload.reason),
+          h('div',{style:{display:'flex',gap:'8px'}},
+            h('button',{style:{flex:'1',padding:'8px',borderRadius:'8px',background:'#ff8500',color:'#fff',fontSize:'11px',fontWeight:'700',letterSpacing:'0.5px'},onClick:()=>{state.view='deloadPlan';render()}},'START DELOAD'),
+            h('button',{style:{padding:'8px 12px',borderRadius:'8px',background:'rgba(255,255,255,0.06)',border:'1px solid var(--border)',color:'var(--text3)',fontSize:'11px',fontWeight:'600'},onClick:()=>{state.deloadDismiss=new Date().toISOString();store.set('deloadDismiss',state.deloadDismiss);render();showToast('You can start a deload anytime in Settings')}},'DISMISS'))));
+      }
+
+      // Today callout
+      if(todayWorkout){const tw=todayWorkout;
+        root.appendChild(h('button',{style:{width:'100%',background:`linear-gradient(135deg,${tw.color}18,${tw.color}08)`,border:`1px solid ${tw.color}30`,borderRadius:'14px',padding:'16px 18px',textAlign:'left',marginBottom:'16px',display:'flex',alignItems:'center',gap:'14px',animation:'fadeIn 0.4s ease',color:'var(--text)'},onClick:()=>openDay(tw)},
+          h('div',{style:{fontSize:'32px'}},tw.icon),
+          h('div',{style:{flex:'1'}},h('div',{style:{fontSize:'10px',fontWeight:'700',letterSpacing:'2px',color:tw.color,marginBottom:'2px'}},`TODAY \u2014 ${todayWD.toUpperCase()}`),h('div',{style:{fontSize:'16px',fontWeight:'900'}},tw.name),h('div',{style:{fontSize:'11px',color:'var(--text3)',marginTop:'2px'}},`${tw.exercises.length} exercises`)),
+          h('div',{style:{fontSize:'22px',color:tw.color}},'\u203A')));
+      }
+
+      // Split header + day cards
+      root.appendChild(h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px'}},
+        h('div',{style:{fontSize:'10px',fontWeight:'800',letterSpacing:'3px',color:'var(--text3)'}},'YOUR SPLIT'),
+        h('button',{style:{background:'none',border:'1px solid var(--border)',borderRadius:'8px',padding:'4px 10px',fontSize:'10px',fontWeight:'700',color:'var(--text2)',letterSpacing:'1px'},onClick:()=>{state.view='reorder';render()}},'EDIT')));
+
+      const dayList=h('div',{style:{display:'flex',flexDirection:'column',gap:'10px',marginBottom:'16px'}});
+      days.forEach((day,i)=>{
+        const ct=state.history.filter(w=>w.dayId===day.id).length;
+        const isToday=day.weekday===todayWD;
+        dayList.appendChild(h('button',{style:{background:isToday?`${day.color}08`:'var(--card)',border:`1px solid ${isToday?day.color+'25':'var(--border)'}`,borderLeft:`4px solid ${day.color}`,borderRadius:'12px',padding:'12px 16px',textAlign:'left',display:'flex',alignItems:'center',gap:'14px',animation:`fadeIn 0.4s ease ${i*80}ms forwards`,opacity:'0',color:'var(--text)'},onClick:()=>openDay(day)},
+          h('div',{style:{fontSize:'26px',width:'36px',textAlign:'center',flexShrink:'0'}},day.icon),
+          h('div',{style:{flex:'1'}},h('div',{style:{fontSize:'14px',fontWeight:'800',letterSpacing:'1px',color:day.color}},day.name),
+            h('div',{style:{fontSize:'10px',color:'var(--text3)',marginTop:'2px'}},h('span',{style:{color:isToday?day.color:'var(--text3)',fontWeight:isToday?'700':'400'}},day.weekday||'Unassigned'),` \u2022 ${day.exercises.length} exercises`)),
+          h('div',{style:{fontSize:'11px',fontWeight:'800',borderRadius:'8px',padding:'4px 10px',background:day.colorGlow,color:day.color,flexShrink:'0'}},`${ct}x`)));
+      });root.appendChild(dayList);
+
+      // Log activity button
+      root.appendChild(h('button',{style:{width:'100%',padding:'11px',borderRadius:'12px',border:'1px solid rgba(255,133,0,0.2)',background:'rgba(255,133,0,0.05)',color:'#ff8500',fontSize:'12px',fontWeight:'700',letterSpacing:'1px',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'},
+        onClick:()=>{state.view='activity';state.selectedActivity=null;state.activityDuration=45;render()}},'\u26A1 LOG ACTIVITY'));
     }
 
-    // RPE trend
-    const rpeH=state.history.filter(s=>s.rpe).slice(0,8).reverse();
-    if(rpeH.length>=2){
-      const tr=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'12px',padding:'14px 16px',marginBottom:'24px'}});
-      tr.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'700',letterSpacing:'2px',color:'var(--text3)',marginBottom:'12px',display:'flex',justifyContent:'space-between'}},
-        h('span',{},'INTENSITY TREND'),h('span',{style:{fontWeight:'600',letterSpacing:'0'}},`avg ${(rpeH.reduce((a,s)=>a+s.rpe,0)/rpeH.length).toFixed(1)}`)));
-      const br=h('div',{style:{display:'flex',alignItems:'flex-end',gap:'4px',height:'60px'}});
-      rpeH.forEach((s,i)=>{const pct=(s.rpe/10)*100;const col=getRpeColor(s.rpe);
-        const bw=h('div',{style:{flex:'1',display:'flex',flexDirection:'column',alignItems:'center',gap:'4px',height:'100%',justifyContent:'flex-end'}});
-        bw.appendChild(h('div',{style:{fontSize:'8px',fontWeight:'700',color:col}},String(s.rpe)));
-        bw.appendChild(h('div',{className:'chart-bar',style:{width:'100%',height:`${pct}%`,background:`${col}40`,borderRadius:'4px 4px 2px 2px',border:`1px solid ${col}50`,minHeight:'4px',animation:`fadeIn 0.3s ease ${i*60}ms forwards`,opacity:'0'}}));
-        br.appendChild(bw)});
-      tr.appendChild(br);
-      const lr=h('div',{style:{display:'flex',gap:'4px',marginTop:'6px'}});
-      rpeH.forEach(s=>lr.appendChild(h('div',{style:{flex:'1',textAlign:'center',fontSize:'7px',color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},s.dayName.split('+')[0].trim().slice(0,5))));
-      tr.appendChild(lr);root.appendChild(tr);
-    }
+    // ── INSIGHTS TAB ──
+    if(tab==='insights'){
+      // Stats row
+      const stats=h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'10px',marginBottom:'20px'}});
+      [{val:totalWorkouts,label:'SESSIONS',color:'var(--text)'},{val:totalPrs,label:'PRs SET',color:'var(--gold)'},{val:last?timeSince(last.date):'\u2014',label:'LAST',color:'var(--text2)'}].forEach(s=>{
+        stats.appendChild(h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'12px',padding:'14px 8px',textAlign:'center'}},
+          h('div',{style:{fontSize:typeof s.val==='number'?'24px':'13px',fontWeight:'900',color:s.color}},String(s.val)),
+          h('div',{style:{fontSize:'8px',fontWeight:'700',letterSpacing:'2px',color:'var(--text3)',marginTop:'4px'}},s.label)));
+      });root.appendChild(stats);
 
-    // Deload recommendation card
-    const deload=checkDeload();
-    if(deload.needed){
-      root.appendChild(h('div',{style:{background:'rgba(255,133,0,0.08)',border:'1px solid rgba(255,133,0,0.3)',borderRadius:'14px',padding:'14px 16px',marginBottom:'20px'}},
-        h('div',{style:{fontSize:'13px',fontWeight:'800',color:'#ff8500',marginBottom:'6px'}},'\u26A0\uFE0F DELOAD RECOMMENDED'),
-        h('div',{style:{fontSize:'11px',color:'var(--text2)',marginBottom:'12px',lineHeight:'1.5'}},deload.reason),
-        h('div',{style:{display:'flex',gap:'8px'}},
-          h('button',{style:{flex:'1',padding:'8px',borderRadius:'8px',background:'#ff8500',color:'#fff',fontSize:'11px',fontWeight:'700',letterSpacing:'0.5px'},onClick:()=>{state.view='deloadGuide';render()}},'LEARN MORE'),
-          h('button',{style:{padding:'8px 14px',borderRadius:'8px',background:'rgba(255,255,255,0.06)',border:'1px solid var(--border)',color:'var(--text3)',fontSize:'11px',fontWeight:'600'},onClick:()=>{state.deloadDismiss=new Date().toISOString();store.set('deloadDismiss',state.deloadDismiss);render()}},'DISMISS'))));
-    }
+      // Profile chip
+      const p=state.profile;
+      if(p.weight||p.skillLevel){
+        const chips=[];
+        if(p.skillLevel)chips.push(p.skillLevel.toUpperCase());
+        if(p.weight)chips.push(`${p.weight} ${p.weightUnit}`);
+        root.appendChild(h('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap',marginBottom:'16px',marginTop:'-8px'},onClick:()=>{state.view='settings';render()}},
+          chips.map(c=>h('div',{style:{padding:'4px 10px',borderRadius:'20px',background:'var(--card)',border:'1px solid var(--border)',fontSize:'10px',fontWeight:'700',color:'var(--text3)',letterSpacing:'0.5px'}},c))));
+      }
 
-    // Today callout
-    if(todayWorkout){const tw=todayWorkout;
-      root.appendChild(h('button',{style:{width:'100%',background:`linear-gradient(135deg,${tw.color}18,${tw.color}08)`,border:`1px solid ${tw.color}30`,borderRadius:'14px',padding:'16px 18px',textAlign:'left',marginBottom:'24px',display:'flex',alignItems:'center',gap:'14px',animation:'fadeIn 0.4s ease',color:'var(--text)'},onClick:()=>openDay(tw)},
-        h('div',{style:{fontSize:'32px'}},tw.icon),
-        h('div',{style:{flex:'1'}},h('div',{style:{fontSize:'10px',fontWeight:'700',letterSpacing:'2px',color:tw.color,marginBottom:'2px'}},`TODAY \u2014 ${todayWD.toUpperCase()}`),h('div',{style:{fontSize:'16px',fontWeight:'900'}},tw.name),h('div',{style:{fontSize:'11px',color:'var(--text3)',marginTop:'2px'}},`${tw.exercises.length} exercises`)),
-        h('div',{style:{fontSize:'22px',color:tw.color}},'\u203A')));
-    }
+      // Intensity trend line graph
+      const rpeH=state.history.filter(s=>s.rpe).slice(0,8).reverse();
+      if(rpeH.length>=2){
+        const avg=(rpeH.reduce((a,s)=>a+s.rpe,0)/rpeH.length).toFixed(1);
+        const tr=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'12px',padding:'14px 16px',marginBottom:'20px'}});
+        tr.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'700',letterSpacing:'2px',color:'var(--text3)',marginBottom:'14px',display:'flex',justifyContent:'space-between'}},
+          h('span',{},'INTENSITY TREND'),h('span',{style:{fontWeight:'600',letterSpacing:'0'}},`avg ${avg}`)));
 
-    // Log activity button
-    root.appendChild(h('button',{style:{width:'100%',padding:'11px',borderRadius:'12px',border:'1px solid rgba(255,133,0,0.2)',background:'rgba(255,133,0,0.05)',color:'#ff8500',fontSize:'12px',fontWeight:'700',letterSpacing:'1px',marginBottom:'16px',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'},
-      onClick:()=>{state.view='activity';state.selectedActivity=null;state.activityDuration=45;render()}},'\u26A1 LOG ACTIVITY'));
+        const svgW=300,svgH=80,padL=6,padR=6,padT=14,padB=14;
+        const chartW=svgW-padL-padR,chartH=svgH-padT-padB;
+        const rpeVals=rpeH.map(s=>s.rpe);
+        const rpeMin=Math.max(1,Math.min(...rpeVals)-1);
+        const rpeMax=Math.min(10,Math.max(...rpeVals)+1);
+        const rpeRange=rpeMax-rpeMin||1;
+        const yFor=v=>padT+(1-(v-rpeMin)/rpeRange)*chartH;
 
-    // Split header
-    root.appendChild(h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px'}},
-      h('div',{style:{fontSize:'10px',fontWeight:'800',letterSpacing:'3px',color:'var(--text3)'}},'YOUR SPLIT'),
-      h('button',{style:{background:'none',border:'1px solid var(--border)',borderRadius:'8px',padding:'4px 10px',fontSize:'10px',fontWeight:'700',color:'var(--text2)',letterSpacing:'1px'},onClick:()=>{state.view='reorder';render()}},'EDIT')));
+        const pts=rpeH.map((s,i)=>({
+          x:padL+(rpeH.length>1?i/(rpeH.length-1):0.5)*chartW,
+          y:yFor(s.rpe),rpe:s.rpe,dayCol:s.dayColor||'var(--text3)'
+        }));
 
-    const dayList=h('div',{style:{display:'flex',flexDirection:'column',gap:'10px',marginBottom:'28px'}});
-    days.forEach((day,i)=>{
-      const ct=state.history.filter(w=>w.dayId===day.id).length;
-      const isToday=day.weekday===todayWD;
-      dayList.appendChild(h('button',{style:{background:isToday?`${day.color}08`:'var(--card)',border:`1px solid ${isToday?day.color+'25':'var(--border)'}`,borderLeft:`4px solid ${day.color}`,borderRadius:'12px',padding:'12px 16px',textAlign:'left',display:'flex',alignItems:'center',gap:'14px',animation:`fadeIn 0.4s ease ${i*80}ms forwards`,opacity:'0',color:'var(--text)'},onClick:()=>openDay(day)},
-        h('div',{style:{fontSize:'26px',width:'36px',textAlign:'center',flexShrink:'0'}},day.icon),
-        h('div',{style:{flex:'1'}},h('div',{style:{fontSize:'14px',fontWeight:'800',letterSpacing:'1px',color:day.color}},day.name),
-          h('div',{style:{fontSize:'10px',color:'var(--text3)',marginTop:'2px'}},h('span',{style:{color:isToday?day.color:'var(--text3)',fontWeight:isToday?'700':'400'}},day.weekday||'Unassigned'),` \u2022 ${day.exercises.length} exercises`)),
-        h('div',{style:{fontSize:'11px',fontWeight:'800',borderRadius:'8px',padding:'4px 10px',background:day.colorGlow,color:day.color,flexShrink:'0'}},`${ct}x`)));
-    });root.appendChild(dayList);
+        const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+        svg.setAttribute('viewBox',`0 0 ${svgW} ${svgH}`);
+        svg.setAttribute('width','100%');svg.style.display='block';
 
-    // PRs
-    if(totalPrs>0){
-      root.appendChild(h('div',{style:{fontSize:'10px',fontWeight:'800',letterSpacing:'3px',color:'var(--text3)',marginBottom:'10px'}},'RECENT PRs \u{1F3C6}'));
-      const pl=h('div',{style:{display:'flex',flexDirection:'column',gap:'6px'}});
-      Object.entries(state.prRecords).sort((a,b)=>new Date(b[1].date)-new Date(a[1].date)).slice(0,5).forEach(([id,pr])=>{
-        const day=findExDay(id);
-        pl.appendChild(h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',background:'var(--card)',border:'1px solid var(--border)',borderRadius:'10px',padding:'10px 14px'}},
-          h('div',{},h('div',{style:{fontSize:'13px',fontWeight:'600',color:'var(--text)'}},findExName(id)),h('div',{style:{fontSize:'10px',color:day?day.color:'var(--text3)'}},day?day.name:'')),
-          h('span',{style:{fontSize:'14px',fontWeight:'800',color:'var(--gold)'}},`${pr.weight} x ${pr.reps}`)));
-      });root.appendChild(pl);
+        const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+        const grad=document.createElementNS('http://www.w3.org/2000/svg','linearGradient');
+        grad.setAttribute('id','rpeFill');grad.setAttribute('x1','0');grad.setAttribute('y1','0');grad.setAttribute('x2','0');grad.setAttribute('y2','1');
+        const gs1=document.createElementNS('http://www.w3.org/2000/svg','stop');gs1.setAttribute('offset','0%');gs1.setAttribute('stop-color',getRpeColor(Math.round(avg)));gs1.setAttribute('stop-opacity','0.15');
+        const gs2=document.createElementNS('http://www.w3.org/2000/svg','stop');gs2.setAttribute('offset','100%');gs2.setAttribute('stop-color',getRpeColor(Math.round(avg)));gs2.setAttribute('stop-opacity','0');
+        grad.appendChild(gs1);grad.appendChild(gs2);defs.appendChild(grad);svg.appendChild(defs);
+
+        const fillPath=pts.map((p,i)=>((i===0?'M':'L')+p.x+','+p.y)).join(' ')+` L${pts[pts.length-1].x},${svgH} L${pts[0].x},${svgH} Z`;
+        const area=document.createElementNS('http://www.w3.org/2000/svg','path');
+        area.setAttribute('d',fillPath);area.setAttribute('fill','url(#rpeFill)');svg.appendChild(area);
+
+        const linePath=pts.map((p,i)=>((i===0?'M':'L')+p.x+','+p.y)).join(' ');
+        const line=document.createElementNS('http://www.w3.org/2000/svg','path');
+        line.setAttribute('d',linePath);line.setAttribute('fill','none');line.setAttribute('stroke',getRpeColor(Math.round(avg)));
+        line.setAttribute('stroke-width','2');line.setAttribute('stroke-linecap','round');line.setAttribute('stroke-linejoin','round');
+        line.setAttribute('opacity','0.7');svg.appendChild(line);
+
+        pts.forEach(p=>{
+          const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+          dot.setAttribute('cx',String(p.x));dot.setAttribute('cy',String(p.y));dot.setAttribute('r','4');
+          dot.setAttribute('fill',p.dayCol);dot.setAttribute('stroke','var(--card)');dot.setAttribute('stroke-width','2');
+          svg.appendChild(dot);
+          const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+          t.setAttribute('x',String(p.x));t.setAttribute('y',String(p.y-8));
+          t.setAttribute('text-anchor','middle');t.setAttribute('fill',getRpeColor(p.rpe));
+          t.setAttribute('font-size','8');t.setAttribute('font-weight','700');t.textContent=String(p.rpe);
+          svg.appendChild(t);
+        });
+        tr.appendChild(svg);
+
+        const lr=h('div',{style:{display:'flex',gap:'2px',marginTop:'4px'}});
+        rpeH.forEach(s=>{
+          lr.appendChild(h('div',{style:{flex:'1',display:'flex',alignItems:'center',justifyContent:'center',gap:'3px'}},
+            h('div',{style:{width:'5px',height:'5px',borderRadius:'50%',background:s.dayColor||'var(--text3)'}}),
+            h('div',{style:{fontSize:'7px',color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},s.dayName.split('+')[0].split(' ')[0])));
+        });
+        tr.appendChild(lr);
+        root.appendChild(tr);
+      }
+
+      // Recent PRs
+      if(totalPrs>0){
+        root.appendChild(h('div',{style:{fontSize:'10px',fontWeight:'800',letterSpacing:'3px',color:'var(--text3)',marginBottom:'10px'}},'RECENT PRs \u{1F3C6}'));
+        const pl=h('div',{style:{display:'flex',flexDirection:'column',gap:'6px'}});
+        Object.entries(state.prRecords).sort((a,b)=>new Date(b[1].date)-new Date(a[1].date)).slice(0,5).forEach(([id,pr])=>{
+          const day=findExDay(id);
+          pl.appendChild(h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',background:'var(--card)',border:'1px solid var(--border)',borderRadius:'10px',padding:'10px 14px'}},
+            h('div',{},h('div',{style:{fontSize:'13px',fontWeight:'600',color:'var(--text)'}},findExName(id)),h('div',{style:{fontSize:'10px',color:day?day.color:'var(--text3)'}},day?day.name:'')),
+            h('div',{style:{textAlign:'right'}},
+              h('div',{style:{fontSize:'14px',fontWeight:'800',color:'var(--gold)'}},`${pr.weight} x ${pr.reps}`),
+              BW_EXERCISES.has(id)&&state.profile.weight?h('div',{style:{fontSize:'9px',color:'var(--text3)',marginTop:'1px'}},`+BW = ${pr.weight+parseFloat(state.profile.weight)} total`):
+              relStrength(pr.weight)?h('div',{style:{fontSize:'9px',color:'var(--text3)',marginTop:'1px'}},relStrength(pr.weight)):null)));
+        });root.appendChild(pl);
+      }
     }
     return;
   }
@@ -1157,15 +1290,16 @@ function render(){
 
     const exList=h('div',{style:{display:'flex',flexDirection:'column',gap:'10px'}});
     day.exercises.forEach((ex,i)=>{
-      const done=state.sessionSets[ex.id]?.length||0;const complete=done>=ex.sets;const pr=state.prRecords[ex.id];
+      const adjSets=skillSets(ex.sets);const adjReps=skillRepRange(ex.repRange);
+      const done=state.sessionSets[ex.id]?.length||0;const complete=done>=adjSets;const pr=state.prRecords[ex.id];
       exList.appendChild(h('button',{style:{background:complete?'rgba(61,214,140,0.06)':'var(--card)',border:`1px solid ${complete?'rgba(61,214,140,0.2)':'var(--border)'}`,borderLeft:`3px solid ${complete?'#3dd68c':day.color}`,borderRadius:'12px',padding:'14px 16px',textAlign:'left',animation:`fadeIn 0.35s ease ${i*50}ms forwards`,opacity:'0',color:'var(--text)',width:'100%'},onClick:()=>openExercise(i)},
         h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
           h('div',{},
             h('div',{style:{fontSize:'14px',fontWeight:'700'}},`${complete?'\u2713 ':''}${ex.name}`),
-            h('div',{style:{fontSize:'10px',color:'var(--text3)',marginTop:'2px'}},`${ex.sets} sets x ${ex.repRange}${pr?'':''}`),
-            pr?h('div',{style:{fontSize:'10px',color:'var(--gold)',marginTop:'1px'}},`PR: ${pr.weight} x ${pr.reps}`):null),
+            h('div',{style:{fontSize:'10px',color:'var(--text3)',marginTop:'2px'}},`${adjSets} sets x ${adjReps}`),
+            pr?h('div',{style:{fontSize:'10px',color:'var(--gold)',marginTop:'1px'}},`PR: ${pr.weight} x ${pr.reps}${relStrength(pr.weight)?' \u2022 '+relStrength(pr.weight):''}`):null),
           h('div',{style:{display:'flex',alignItems:'center',gap:'6px'}},
-            done>0?h('span',{style:{fontSize:'10px',fontWeight:'700',color:complete?'#3dd68c':day.color,background:complete?'rgba(61,214,140,0.12)':day.colorGlow,borderRadius:'6px',padding:'3px 8px'}},`${done}/${ex.sets}`):null,
+            done>0?h('span',{style:{fontSize:'10px',fontWeight:'700',color:complete?'#3dd68c':day.color,background:complete?'rgba(61,214,140,0.12)':day.colorGlow,borderRadius:'6px',padding:'3px 8px'}},`${done}/${adjSets}`):null,
             h('span',{style:{fontSize:'16px',color:'var(--text3)'}},'\u203A')))));
     });root.appendChild(exList);return;
   }
@@ -1174,9 +1308,10 @@ function render(){
   if(state.view==='exercise'&&state.selectedDay){
     const day=state.selectedDay;const ex=day.exercises[state.exIndex];
     const pr=state.prRecords[ex.id];const logged=state.sessionSets[ex.id]||[];
+    const adjSets=skillSets(ex.sets);
     const warmupCount=logged.filter(s=>s.tag==='warmup').length;
     const workCount=logged.filter(s=>s.tag!=='warmup').length;
-    const isLastSet=state.currentSet>=ex.sets;const isLastEx=state.exIndex>=day.exercises.length-1;
+    const isLastSet=state.currentSet>=adjSets;const isLastEx=state.exIndex>=day.exercises.length-1;
     const isNewPr=state.setWeight*state.setReps>(pr?pr.weight*pr.reps:0)&&state.setWeight*state.setReps>0;
     const swap=state.sessionSwaps[ex.id];
     const displayName=swap?swap.subName:ex.name;
@@ -1194,15 +1329,26 @@ function render(){
     header.appendChild(h('div',{style:{fontSize:'18px',fontWeight:'900',color:'var(--text)',marginBottom:'2px'}},displayName));
     if(swap)header.appendChild(h('div',{style:{fontSize:'9px',color:'var(--text3)',marginBottom:'4px'}},'\u21BA from '+ex.name));
     else if(ex.sub)header.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)',marginBottom:'4px'}},ex.sub));
+    if(isDeloadActive()){
+      const strat=getDeloadStrategy(state.deloadActive.strategy);
+      const lastW=state.lastWeights[ex.id];const origW=lastW?lastW.weight:(pr?pr.weight:0);
+      if(origW){header.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'700',color:strat.color,marginBottom:'4px'}},
+        `DELOAD \u2022 Normal: ${origW}${state.profile.weightUnit||'lbs'}`));}
+    }
     // Compact progress: dots + set counter in one line
     const progressLine=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'4px'}});
     const dots=h('div',{style:{display:'flex',alignItems:'center',gap:'4px'}});
     for(let i=0;i<warmupCount;i++)dots.appendChild(h('div',{style:{width:'5px',height:'5px',borderRadius:'50%',background:'rgba(255,165,0,0.5)'}}));
-    for(let i=0;i<ex.sets;i++)dots.appendChild(h('div',{style:{width:i===state.currentSet-1?'16px':'6px',height:'6px',borderRadius:'3px',background:i<workCount?'#3dd68c':i===state.currentSet-1?day.color:'rgba(255,255,255,0.08)',transition:'all 0.3s'}}));
+    for(let i=0;i<adjSets;i++)dots.appendChild(h('div',{style:{width:i===state.currentSet-1?'16px':'6px',height:'6px',borderRadius:'3px',background:i<workCount?'#3dd68c':i===state.currentSet-1?day.color:'rgba(255,255,255,0.08)',transition:'all 0.3s'}}));
     progressLine.appendChild(dots);
-    progressLine.appendChild(h('span',{style:{fontSize:'10px',color:'var(--text3)'}},`${state.currentSet}/${ex.sets}`));
+    progressLine.appendChild(h('span',{style:{fontSize:'10px',color:'var(--text3)'}},`${state.currentSet}/${adjSets}`));
     if(pr)progressLine.appendChild(h('span',{style:{fontSize:'9px',color:'var(--gold)',fontWeight:'700'}},`PR ${pr.weight}\u00D7${pr.reps}`));
     header.appendChild(progressLine);
+    // Target rep range badge
+    const adjReps=skillRepRange(ex.repRange);
+    header.appendChild(h('div',{style:{display:'inline-flex',alignItems:'center',gap:'6px',padding:'4px 12px',borderRadius:'8px',background:`${day.color}10`,border:`1px solid ${day.color}20`,marginTop:'4px'}},
+      h('span',{style:{fontSize:'8px',fontWeight:'800',letterSpacing:'1.5px',color:day.color}},'TARGET'),
+      h('span',{style:{fontSize:'11px',fontWeight:'700',color:'var(--text)'}},`${adjSets} sets \u00D7 ${adjReps} reps`)));
     root.appendChild(header);
 
     // ── Expandable panels (info/demo/swap) — tucked away ──
@@ -1226,6 +1372,13 @@ function render(){
             infoBox.appendChild(h('div',{style:{background:riskBg,border:`1px solid ${riskBorder}`,borderRadius:'8px',padding:'8px 10px',marginTop:'4px'}},
               h('div',{style:{fontSize:'8px',fontWeight:'800',letterSpacing:'1.5px',color:riskCol,marginBottom:'3px'}},exInfo.risk==='high'?'\u26A0\uFE0F HIGHER INJURY RISK':'\u26A0 TECHNIQUE-SENSITIVE'),
               h('div',{style:{fontSize:'10px',color:'var(--text2)',lineHeight:'1.5'}},exInfo.riskNote)));
+          }
+          // Novice skill warning
+          const sk=getSkill();
+          if(state.profile.skillLevel==='novice'&&SKILL_CONFIG.novice.warn.has(displayId)){
+            infoBox.appendChild(h('div',{style:{background:'rgba(77,141,247,0.06)',border:'1px solid rgba(77,141,247,0.2)',borderRadius:'8px',padding:'8px 10px',marginTop:'6px'}},
+              h('div',{style:{fontSize:'8px',fontWeight:'800',letterSpacing:'1.5px',color:'#4d8df7',marginBottom:'3px'}},'NOVICE TIP'),
+              h('div',{style:{fontSize:'10px',color:'var(--text2)',lineHeight:'1.5'}},'This is a complex compound movement. Focus on light weight and proper form before adding load. Consider the substitution options below.')));
           }
         }else{infoBox.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)'}},'No info available for this exercise.'))}
         // Form cues
@@ -1597,16 +1750,29 @@ function render(){
       onClick:()=>toggleWakeLock()},state.wakeLockEnabled?'ON':'OFF'));
     prefSec.appendChild(wakeRow);
 
-    // Hype messages toggle
-    const hypeRow=h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0'}});
-    hypeRow.appendChild(h('div',{},
-      h('div',{style:{fontSize:'12px',fontWeight:'700',color:'var(--text)'}},'\u{1F525} Hype Messages'),
-      h('div',{style:{fontSize:'9px',color:'var(--text3)',marginTop:'2px'}},'Motivational messages after logging sets.')));
-    hypeRow.appendChild(h('button',{style:{padding:'6px 14px',borderRadius:'8px',fontSize:'10px',fontWeight:'800',letterSpacing:'1px',
-      background:state.hypeEnabled?'rgba(61,214,140,0.15)':'rgba(255,255,255,0.06)',
-      color:state.hypeEnabled?'#3dd68c':'var(--text3)',border:`1px solid ${state.hypeEnabled?'rgba(61,214,140,0.3)':'rgba(255,255,255,0.08)'}`},
-      onClick:()=>{state.hypeEnabled=!state.hypeEnabled;save();render()}},state.hypeEnabled?'ON':'OFF'));
-    prefSec.appendChild(hypeRow);
+
+    // Deload row
+    const deloadRow=h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderTop:'1px solid rgba(255,255,255,0.04)'}});
+    if(isDeloadActive()){
+      const strat=getDeloadStrategy(state.deloadActive.strategy);
+      const dl=deloadDaysLeft();
+      deloadRow.appendChild(h('div',{},
+        h('div',{style:{fontSize:'12px',fontWeight:'700',color:strat.color}},`${strat.icon} Deload Active \u2014 ${strat.name}`),
+        h('div',{style:{fontSize:'9px',color:'var(--text3)',marginTop:'2px'}},`${dl} day${dl!==1?'s':''} remaining`)));
+      deloadRow.appendChild(h('div',{style:{display:'flex',gap:'6px'}},
+        h('button',{style:{padding:'6px 10px',borderRadius:'8px',fontSize:'10px',fontWeight:'700',background:strat.color+'20',color:strat.color,border:`1px solid ${strat.color}40`},
+          onClick:()=>{state.view='deloadPlan';render()}},'VIEW'),
+        h('button',{style:{padding:'6px 10px',borderRadius:'8px',fontSize:'10px',fontWeight:'700',background:'rgba(255,61,61,0.08)',color:'#ff3d3d',border:'1px solid rgba(255,61,61,0.2)'},
+          onClick:()=>{if(confirm('End deload early?'))endDeload()}},'END')));
+    }else{
+      deloadRow.appendChild(h('div',{},
+        h('div',{style:{fontSize:'12px',fontWeight:'700',color:'var(--text)'}},'\u{1F4A4} Deload'),
+        h('div',{style:{fontSize:'9px',color:'var(--text3)',marginTop:'2px'}},state.deloadDismiss?'Dismissed \u2014 tap to start a deload week':'Plan a recovery week')));
+      deloadRow.appendChild(h('button',{style:{padding:'6px 14px',borderRadius:'8px',fontSize:'10px',fontWeight:'800',letterSpacing:'1px',
+        background:'rgba(255,133,0,0.1)',color:'#ff8500',border:'1px solid rgba(255,133,0,0.25)'},
+        onClick:()=>{state.view='deloadPlan';render()}},'START'));
+    }
+    prefSec.appendChild(deloadRow);
     root.appendChild(prefSec);
 
     // ── RPE Guide ──
@@ -1719,13 +1885,21 @@ function render(){
     const profSec=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'16px',marginBottom:'16px'}});
     profSec.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'800',letterSpacing:'2px',color:'var(--text3)',marginBottom:'12px'}},'PROFILE'));
     // Skill level
-    profSec.appendChild(h('div',{style:{marginBottom:'12px'}},
+    const currentSkill=SKILL_CONFIG[state.profile.skillLevel];
+    profSec.appendChild(h('div',{style:{marginBottom:'14px'}},
       h('div',{style:{fontSize:'10px',fontWeight:'700',color:'var(--text2)',marginBottom:'6px'}},'SKILL LEVEL'),
-      h('div',{style:{display:'flex',gap:'6px'}},
-        ['novice','intermediate','advanced'].map(lvl=>h('button',{style:{flex:'1',padding:'8px 4px',borderRadius:'8px',fontSize:'10px',fontWeight:'700',letterSpacing:'0.5px',border:`1px solid ${state.profile.skillLevel===lvl?'var(--accent)':'var(--border)'}`,background:state.profile.skillLevel===lvl?'rgba(255,61,61,0.15)':'var(--bg2)',color:state.profile.skillLevel===lvl?'var(--accent)':'var(--text2)'},
-          onClick:()=>{state.profile.skillLevel=lvl;save();render()}},lvl.toUpperCase())))));
+      h('div',{style:{display:'flex',gap:'6px',marginBottom:'8px'}},
+        ['novice','intermediate','advanced'].map(lvl=>{
+          const sel=state.profile.skillLevel===lvl;
+          return h('button',{style:{flex:'1',padding:'8px 4px',borderRadius:'8px',fontSize:'10px',fontWeight:'700',letterSpacing:'0.5px',
+            border:`1px solid ${sel?'var(--accent)':'var(--border)'}`,background:sel?'rgba(255,61,61,0.15)':'var(--bg2)',color:sel?'var(--accent)':'var(--text2)'},
+            onClick:()=>{const prev=state.profile.skillLevel;state.profile.skillLevel=lvl;save();render();
+              if(prev!==lvl)showToast(`${lvl.toUpperCase()} \u2014 tap "How this works" to see what changed`)}},lvl.toUpperCase())})),
+      currentSkill?h('div',{style:{fontSize:'10px',color:'var(--text3)',lineHeight:'1.5',marginBottom:'6px'}},currentSkill.desc):null,
+      state.profile.skillLevel?h('button',{style:{background:'none',border:'none',padding:'0',color:'var(--accent)',fontSize:'10px',fontWeight:'700'},
+        onClick:()=>{state.view='skillInfo';render()}},'How this works \u203A'):null));
     // Weight
-    profSec.appendChild(h('div',{style:{display:'flex',gap:'8px',alignItems:'center',marginBottom:'12px'}},
+    profSec.appendChild(h('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},
       h('div',{style:{flex:'1'}},
         h('div',{style:{fontSize:'10px',fontWeight:'700',color:'var(--text2)',marginBottom:'4px'}},'BODY WEIGHT'),
         h('input',{type:'number',value:state.profile.weight,placeholder:'0',style:{width:'100%',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'8px',padding:'8px 12px',color:'var(--text)',fontSize:'14px',fontWeight:'700'},
@@ -1733,18 +1907,9 @@ function render(){
       h('div',{style:{display:'flex',flexDirection:'column',gap:'4px',marginTop:'16px'}},
         ['lbs','kg'].map(u=>h('button',{style:{padding:'5px 10px',borderRadius:'6px',fontSize:'10px',fontWeight:'700',border:`1px solid ${state.profile.weightUnit===u?'var(--accent)':'var(--border)'}`,background:state.profile.weightUnit===u?'rgba(255,61,61,0.15)':'var(--bg2)',color:state.profile.weightUnit===u?'var(--accent)':'var(--text2)'},
           onClick:()=>{state.profile.weightUnit=u;save();render()}},u.toUpperCase())))));
-    // Height
-    profSec.appendChild(h('div',{style:{marginBottom:'4px'}},
-      h('div',{style:{fontSize:'10px',fontWeight:'700',color:'var(--text2)',marginBottom:'4px'}},'HEIGHT'),
-      h('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},
-        h('div',{style:{display:'flex',alignItems:'center',gap:'4px'}},
-          h('input',{type:'number',value:state.profile.heightFt,placeholder:'0',style:{width:'52px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'8px',padding:'8px 10px',color:'var(--text)',fontSize:'14px',fontWeight:'700'},
-            onInput:e=>{state.profile.heightFt=e.target.value;save()}}),
-          h('span',{style:{fontSize:'11px',color:'var(--text3)'}},'ft')),
-        h('div',{style:{display:'flex',alignItems:'center',gap:'4px'}},
-          h('input',{type:'number',value:state.profile.heightIn,placeholder:'0',style:{width:'52px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'8px',padding:'8px 10px',color:'var(--text)',fontSize:'14px',fontWeight:'700'},
-            onInput:e=>{state.profile.heightIn=e.target.value;save()}}),
-          h('span',{style:{fontSize:'11px',color:'var(--text3)'}},'in')))));
+    if(state.profile.weight){
+      profSec.appendChild(h('div',{style:{fontSize:'9px',color:'var(--text3)',marginTop:'6px',lineHeight:'1.4'}},'Used for relative strength on PRs (e.g. 1.5x BW) and bodyweight exercise tracking.'));
+    }
     root.appendChild(profSec);
 
     // Danger
@@ -1752,8 +1917,8 @@ function render(){
     dangerSec.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'800',letterSpacing:'2px',color:'var(--text3)',marginBottom:'12px'}},'DANGER ZONE'));
     dangerSec.appendChild(h('button',{style:{background:'rgba(255,61,61,0.08)',border:'1px solid rgba(255,61,61,0.25)',borderRadius:'10px',padding:'12px 20px',color:'#ff3d3d',fontSize:'12px',fontWeight:'700',width:'100%',letterSpacing:'1px'},onClick:()=>{
       if(confirm('Clear ALL data? This cannot be undone.')){
-        state.prRecords={};state.history=[];state.sessionSets={};state.days=[...DEFAULT_DAYS];state.customExercises=[];state.exerciseNotes={};state.progressPics=[];state.deloadDismiss=null;
-        store.del('prs');store.del('history');store.del('days');store.del('customEx');store.del('exNotes');store.del('pics');store.del('deloadDismiss');store.del('launched');
+        state.prRecords={};state.history=[];state.sessionSets={};state.days=[...DEFAULT_DAYS];state.customExercises=[];state.exerciseNotes={};state.progressPics=[];state.deloadDismiss=null;state.lastWeights={};state.deloadActive=null;
+        store.del('prs');store.del('history');store.del('days');store.del('customEx');store.del('exNotes');store.del('pics');store.del('deloadDismiss');store.del('lastWeights');store.del('deloadActive');store.del('launched');
         showToast('All data cleared');state.view='home';render()}
     }},'\u26A0\uFE0F CLEAR ALL DATA'));
     root.appendChild(dangerSec);return;
@@ -1819,24 +1984,195 @@ function render(){
 
     if(state.selectedActivity){
       const act=state.selectedActivity;
-      const estRpe=Math.min(10,Math.max(1,Math.round(act.met*0.9)));
-      root.appendChild(h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'16px',marginBottom:'16px'}},
-        h('div',{style:{fontSize:'9px',fontWeight:'800',letterSpacing:'2px',color:'var(--text3)',marginBottom:'12px'}},'DURATION'),
-        h('div',{style:{display:'flex',gap:'8px',flexWrap:'wrap',marginBottom:'12px'}},
-          ...ACTIVITY_DURATIONS.map(d=>{const active=state.activityDuration===d;return h('button',{style:{padding:'8px 14px',borderRadius:'8px',fontSize:'12px',fontWeight:active?'800':'600',
-            background:active?'rgba(255,133,0,0.15)':'var(--bg2)',border:`1px solid ${active?'rgba(255,133,0,0.4)':'var(--border)'}`,
-            color:active?'#ff8500':'var(--text3)'},onClick:()=>{state.activityDuration=d;render()}},`${d}min`);})),
-        h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-          h('div',{style:{fontSize:'11px',color:'var(--text3)'}},`Estimated intensity`),
-          h('div',{style:{fontSize:'16px',fontWeight:'900',color:getRpeColor(estRpe)}},`RPE ${estRpe}`))));
+      if(state.activityRpe==null)state.activityRpe=Math.min(10,Math.max(1,Math.round(act.met*0.9)));
+      const card=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'16px',marginBottom:'16px'}});
+      card.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'800',letterSpacing:'2px',color:'var(--text3)',marginBottom:'12px'}},'DURATION'));
+      const pickerWrap=h('div',{style:{position:'relative',height:'120px',overflow:'hidden',marginBottom:'16px',borderRadius:'10px'}});
+      // Fade masks
+      pickerWrap.appendChild(h('div',{style:{position:'absolute',top:'0',left:'0',right:'0',height:'40px',background:'linear-gradient(var(--card),transparent)',zIndex:'2',pointerEvents:'none'}}));
+      pickerWrap.appendChild(h('div',{style:{position:'absolute',bottom:'0',left:'0',right:'0',height:'40px',background:'linear-gradient(transparent,var(--card))',zIndex:'2',pointerEvents:'none'}}));
+      // Selection highlight
+      pickerWrap.appendChild(h('div',{style:{position:'absolute',top:'40px',left:'0',right:'0',height:'40px',background:'rgba(255,133,0,0.08)',border:'1px solid rgba(255,133,0,0.25)',borderRadius:'8px',zIndex:'1',pointerEvents:'none'}}));
+      const scroller=h('div',{style:{height:'100%',overflowY:'scroll',scrollSnapType:'y mandatory',WebkitOverflowScrolling:'touch',paddingTop:'40px',paddingBottom:'40px',msOverflowStyle:'none',scrollbarWidth:'none'}});
+      scroller.style.cssText+='::-webkit-scrollbar{display:none}';
+      ACTIVITY_DURATIONS.forEach(d=>{
+        const item=h('div',{style:{height:'40px',display:'flex',alignItems:'center',justifyContent:'center',scrollSnapAlign:'center',fontSize:'18px',fontWeight:'800',color:d===state.activityDuration?'#ff8500':'var(--text3)',transition:'color 0.15s'}},
+          d<60?`${d} min`:d%60===0?`${d/60} hr${d>60?'s':''}`:`${Math.floor(d/60)}h ${d%60}m`);
+        scroller.appendChild(item);
+      });
+      pickerWrap.appendChild(scroller);
+      card.appendChild(pickerWrap);
+      // Scroll to current value & listen for changes
+      requestAnimationFrame(()=>{
+        const idx=ACTIVITY_DURATIONS.indexOf(state.activityDuration);
+        if(idx>=0)scroller.scrollTop=idx*40;
+        let scrollTimer;
+        scroller.addEventListener('scroll',()=>{
+          clearTimeout(scrollTimer);
+          scrollTimer=setTimeout(()=>{
+            const snapIdx=Math.round(scroller.scrollTop/40);
+            const val=ACTIVITY_DURATIONS[Math.min(snapIdx,ACTIVITY_DURATIONS.length-1)];
+            if(val&&val!==state.activityDuration){
+              state.activityDuration=val;
+              // Update colors without re-render
+              Array.from(scroller.children).forEach((el,i)=>{el.style.color=ACTIVITY_DURATIONS[i]===val?'#ff8500':'var(--text3)'});
+            }
+          },80);
+        });
+      });
+      card.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'800',letterSpacing:'2px',color:'var(--text3)',marginBottom:'12px'}},'INTENSITY'));
+      const rpeRow=h('div',{style:{display:'flex',alignItems:'center',gap:'12px'}});
+      const slider=h('input',{type:'range',min:'1',max:'10',value:String(state.activityRpe),
+        style:{flex:'1',height:'8px',WebkitAppearance:'none',appearance:'none',borderRadius:'4px',
+          background:`linear-gradient(90deg,#3dd68c,#f7c948,#ff3d3d)`,outline:'none',touchAction:'none'}});
+      slider.addEventListener('input',e=>{
+        const v=parseInt(e.target.value);state.activityRpe=v;
+        const lbl=document.getElementById('activity-rpe-val');
+        if(lbl){lbl.textContent=`RPE ${v}`;lbl.style.color=getRpeColor(v)}
+      });
+      rpeRow.appendChild(slider);
+      rpeRow.appendChild(h('div',{id:'activity-rpe-val',style:{fontSize:'16px',fontWeight:'900',color:getRpeColor(state.activityRpe),minWidth:'58px',textAlign:'right'}},`RPE ${state.activityRpe}`));
+      card.appendChild(rpeRow);
+      root.appendChild(card);
       root.appendChild(h('button',{style:{width:'100%',padding:'14px',borderRadius:'14px',background:'#ff8500',color:'#fff',fontSize:'15px',fontWeight:'900',letterSpacing:'2px'},
         onClick:()=>{
-          const rpe=Math.min(10,Math.max(1,Math.round(act.met*0.9)));
-          const sess={date:new Date().toISOString(),type:'activity',dayName:act.name,dayColor:'#ff8500',dayIcon:act.icon,duration:state.activityDuration,met:act.met,rpe,exercises:[]};
+          const sess={date:new Date().toISOString(),type:'activity',dayName:act.name,dayColor:'#ff8500',dayIcon:act.icon,duration:state.activityDuration,met:act.met,rpe:state.activityRpe,exercises:[]};
           state.history=[sess,...state.history];store.set('history',state.history);
-          showToast('\u2705 Activity logged!');state.selectedActivity=null;state.view='home';render();
+          showToast('\u2705 Activity logged!');state.selectedActivity=null;state.activityRpe=null;state.view='home';render();
         }},'\u26A1 LOG '+act.name.toUpperCase()));
     }
+    return;
+  }
+
+  // ═══════════════ DELOAD PLAN ═══════════════
+  if(state.view==='deloadPlan'){
+    const activeStrat=isDeloadActive()?state.deloadActive.strategy:null;
+    const previewStrat=state.deloadPreview||activeStrat||'light';
+    root.appendChild(h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'20px'}},
+      h('button',{style:{background:'none',color:'var(--text2)',fontSize:'14px',fontWeight:'600',padding:'8px 0'},onClick:()=>{state.deloadPreview=null;state.view='home';render()}},'\u2190 Back'),
+      h('div',{style:{fontSize:'12px',fontWeight:'800',letterSpacing:'3px',color:'var(--text2)'}},isDeloadActive()?'DELOAD PLAN':'CHOOSE DELOAD'),
+      h('div',{style:{width:'50px'}})));
+
+    // Strategy picker cards
+    if(!isDeloadActive()){
+      const stratRow=h('div',{style:{display:'flex',gap:'8px',marginBottom:'24px'}});
+      DELOAD_STRATEGIES.forEach(s=>{
+        const sel=previewStrat===s.id;
+        stratRow.appendChild(h('button',{style:{flex:'1',padding:'12px 8px',borderRadius:'12px',background:sel?`${s.color}20`:'var(--card)',border:`1px solid ${sel?s.color+'60':'var(--border)'}`,textAlign:'center'},
+          onClick:()=>{state.deloadPreview=s.id;render()}},
+          h('div',{style:{fontSize:'18px',marginBottom:'4px'}},s.icon),
+          h('div',{style:{fontSize:'10px',fontWeight:'800',color:sel?s.color:'var(--text)',letterSpacing:'0.5px',marginBottom:'4px'}},s.name),
+          h('div',{style:{fontSize:'9px',color:'var(--text3)',lineHeight:'1.4'}},s.desc)));
+      });
+      root.appendChild(stratRow);
+    }
+
+    // Show active strategy info
+    if(isDeloadActive()){
+      const strat=getDeloadStrategy(activeStrat);
+      const dl=deloadDaysLeft();
+      root.appendChild(h('div',{style:{background:`${strat.color}12`,border:`1px solid ${strat.color}40`,borderRadius:'14px',padding:'14px 16px',marginBottom:'20px',textAlign:'center'}},
+        h('div',{style:{fontSize:'20px',marginBottom:'4px'}},strat.icon),
+        h('div',{style:{fontSize:'14px',fontWeight:'800',color:strat.color,marginBottom:'4px'}},strat.name),
+        h('div',{style:{fontSize:'11px',color:'var(--text2)',marginBottom:'4px'}},strat.desc),
+        h('div',{style:{fontSize:'10px',color:'var(--text3)'}},`${dl} day${dl!==1?'s':''} remaining`)));
+    }
+
+    // Day-by-day preview
+    root.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'700',letterSpacing:'2px',color:'var(--text3)',marginBottom:'12px'}},'YOUR MODIFIED PROGRAM'));
+    const strat=getDeloadStrategy(previewStrat);
+    state.days.forEach((day,di)=>{
+      const dayCard=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'14px 16px',marginBottom:'10px',animation:`fadeIn 0.3s ease ${di*60}ms forwards`,opacity:'0'}});
+      dayCard.appendChild(h('div',{style:{display:'flex',alignItems:'center',gap:'8px',marginBottom:'10px'}},
+        h('span',{style:{fontSize:'16px'}},day.icon),
+        h('span',{style:{fontSize:'13px',fontWeight:'800',color:day.color}},day.name),
+        day.weekday?h('span',{style:{fontSize:'9px',color:'var(--text3)',marginLeft:'auto'}},day.weekday):null));
+      const table=h('div',{style:{display:'flex',flexDirection:'column',gap:'6px'}});
+      day.exercises.forEach(ex=>{
+        const last=state.lastWeights[ex.id];const pr=state.prRecords[ex.id];
+        const origWeight=last?last.weight:(pr?pr.weight:0);
+        const deloadW=origWeight?strat.apply(origWeight):0;
+        const origSets=ex.sets;
+        const deloadS=strat.setsModify(origSets);
+        const weightUnit=state.profile.weightUnit||'lbs';
+        const row=h('div',{style:{display:'flex',alignItems:'center',gap:'8px',padding:'6px 8px',borderRadius:'8px',background:'rgba(255,255,255,0.02)'}});
+        row.appendChild(h('div',{style:{flex:'1',fontSize:'11px',fontWeight:'600',color:'var(--text)'}},ex.name));
+        if(origWeight){
+          const changed=deloadW!==origWeight||deloadS!==origSets;
+          if(changed){
+            row.appendChild(h('div',{style:{display:'flex',alignItems:'center',gap:'6px',fontSize:'10px'}},
+              h('span',{style:{color:'var(--text3)',textDecoration:'line-through'}},`${origWeight}${weightUnit} \u00D7${origSets}`),
+              h('span',{style:{color:'var(--text3)'}},'\u2192'),
+              h('span',{style:{color:strat.color,fontWeight:'700'}},`${deloadW}${weightUnit} \u00D7${deloadS}`)));
+          }else{
+            row.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)'}},`${origWeight}${weightUnit} \u00D7${origSets}`));
+          }
+        }else{
+          row.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)',fontStyle:'italic'}},'No weight data'));
+        }
+        table.appendChild(row);
+      });
+      dayCard.appendChild(table);
+      root.appendChild(dayCard);
+    });
+
+    // Action button
+    if(!isDeloadActive()){
+      root.appendChild(h('button',{style:{width:'100%',padding:'16px',borderRadius:'14px',background:strat.color,color:'#fff',fontSize:'14px',fontWeight:'800',letterSpacing:'1px',marginTop:'12px',marginBottom:'8px'},
+        onClick:()=>activateDeload(previewStrat)},`ACTIVATE ${strat.name}`));
+      root.appendChild(h('div',{style:{textAlign:'center',fontSize:'10px',color:'var(--text3)',marginBottom:'16px'}},'Lasts 7 days. Your weights will be auto-adjusted.'));
+    }else{
+      root.appendChild(h('button',{style:{width:'100%',padding:'14px',borderRadius:'14px',background:'rgba(255,61,61,0.1)',border:'1px solid rgba(255,61,61,0.3)',color:'#ff3d3d',fontSize:'13px',fontWeight:'800',letterSpacing:'1px',marginTop:'16px'},
+        onClick:()=>{if(confirm('End deload early?'))endDeload()}},'END DELOAD EARLY'));
+    }
+    return;
+  }
+
+  // ═══════════════ SKILL INFO ═══════════════
+  if(state.view==='skillInfo'){
+    root.appendChild(h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'20px'}},
+      h('button',{style:{background:'none',color:'var(--text2)',fontSize:'14px',fontWeight:'600',padding:'8px 0'},onClick:()=>{state.view='settings';render()}},'\u2190 Back'),
+      h('div',{style:{fontSize:'12px',fontWeight:'800',letterSpacing:'3px',color:'var(--text2)'}},'SKILL LEVELS'),
+      h('div',{style:{width:'50px'}})));
+
+    root.appendChild(h('div',{style:{fontSize:'11px',color:'var(--text2)',lineHeight:'1.6',marginBottom:'20px'}},'Your skill level adjusts how the app programs your training. Here\u2019s what changes at each level:'));
+
+    const levels=[
+      {id:'novice',color:'#3dd68c',items:[
+        'Sets per exercise reduced by 1 (minimum 2)',
+        'Rep ranges shifted +2 higher to build work capacity',
+        'Deload detection is more lenient (every 6 weeks)',
+        'Complex lifts (squat, deadlift, barbell row) show form-first warnings',
+        'Focus: learn movements, build consistency']},
+      {id:'intermediate',color:'#f7c948',items:[
+        'Standard set and rep prescriptions',
+        'Normal deload sensitivity (every 5 weeks)',
+        'No exercise restrictions',
+        'Focus: progressive overload, building strength']},
+      {id:'advanced',color:'#ff3d3d',items:[
+        'Sets per exercise increased by 1 (minimum 3)',
+        'Rep ranges shifted -1 lower for strength emphasis',
+        'More aggressive deload detection (every 4 weeks)',
+        'Higher volume to drive continued adaptation',
+        'Focus: intensity management, periodization']}
+    ];
+
+    levels.forEach((lvl,i)=>{
+      const sk=SKILL_CONFIG[lvl.id];const isCurrent=state.profile.skillLevel===lvl.id;
+      const card=h('div',{style:{background:isCurrent?`${lvl.color}08`:'var(--card)',border:`1px solid ${isCurrent?lvl.color+'40':'var(--border)'}`,borderRadius:'14px',padding:'14px 16px',marginBottom:'10px',animation:`fadeIn 0.3s ease ${i*80}ms forwards`,opacity:'0'}});
+      card.appendChild(h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}},
+        h('div',{style:{fontSize:'13px',fontWeight:'800',color:lvl.color}},sk.label),
+        isCurrent?h('div',{style:{fontSize:'8px',fontWeight:'800',letterSpacing:'1px',color:lvl.color,padding:'2px 8px',borderRadius:'4px',background:`${lvl.color}20`}},'CURRENT'):null));
+      lvl.items.forEach(item=>{
+        card.appendChild(h('div',{style:{display:'flex',gap:'6px',padding:'3px 0',fontSize:'10px',color:'var(--text2)',lineHeight:'1.5'}},
+          h('span',{style:{color:lvl.color,flexShrink:'0'}},'\u2022'),item));
+      });
+      root.appendChild(card);
+    });
+
+    root.appendChild(h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'12px',padding:'12px 14px',marginTop:'8px'}},
+      h('div',{style:{fontSize:'9px',fontWeight:'700',letterSpacing:'1px',color:'var(--text3)',marginBottom:'4px'}},'BODY WEIGHT'),
+      h('div',{style:{fontSize:'10px',color:'var(--text2)',lineHeight:'1.5'}},'When set, your PRs show relative strength (e.g. "1.5x BW"). Bodyweight exercises like pull-ups show total load moved (added weight + bodyweight).')));
     return;
   }
 
@@ -1873,7 +2209,16 @@ function openExercise(idx){
   state.exIndex=idx;state.currentSet=existing.filter(s=>s.tag!=='warmup').length+1;state.setTag='normal';
   state.showDemo=false;state.showExInfo=false;state.showSwapMenu=false;
   const pr=state.prRecords[ex.id];const last=existing.length>0?existing[existing.length-1]:null;
-  state.setWeight=last?last.weight:(pr?pr.weight:0);state.setReps=last?last.reps:(pr?pr.reps:8);
+  const lastW=state.lastWeights[ex.id];
+  // Base weight: current session last set > last workout weight > PR > 0
+  let baseWeight=last?last.weight:(lastW?lastW.weight:(pr?pr.weight:0));
+  let baseReps=last?last.reps:(lastW?lastW.reps:(pr?pr.reps:8));
+  // Apply deload modifier
+  if(isDeloadActive()&&!last){
+    const strat=getDeloadStrategy(state.deloadActive.strategy);
+    if(baseWeight>0)baseWeight=strat.apply(baseWeight);
+  }
+  state.setWeight=baseWeight;state.setReps=baseReps;
   state.setAssistWeight=last?(last.assistWeight||0):0;
   state.view='exercise';render();
 }
@@ -1888,8 +2233,6 @@ function logSet(){
   state.sessionSets[ex.id].push(setData);
   state.setTag='normal';
 
-  // Hype message
-  if(state.hypeEnabled&&!isWarmup)showToast(getHype());
 
   // Start rest timer (skip for warmup — shorter rest assumed)
   if(state.restSeconds>0&&!isWarmup)startRest();
@@ -1897,20 +2240,28 @@ function logSet(){
   // Warmup sets don't advance the set counter
   if(isWarmup){render();return}
 
-  if(state.currentSet<ex.sets){state.currentSet++;render()}
+  if(state.currentSet<skillSets(ex.sets)){state.currentSet++;render()}
   else if(state.exIndex<day.exercises.length-1){
     const next=day.exercises[state.exIndex+1];const nextPr=state.prRecords[next.id];
+    const lastW=state.lastWeights[next.id];
     state.exIndex++;state.currentSet=1;state.showDemo=false;state.showExInfo=false;state.showSwapMenu=false;
-    state.setWeight=nextPr?nextPr.weight:state.setWeight;state.setReps=nextPr?nextPr.reps:8;state.setAssistWeight=0;render();
+    let w=lastW?lastW.weight:(nextPr?nextPr.weight:state.setWeight);
+    let r=lastW?lastW.reps:(nextPr?nextPr.reps:8);
+    if(isDeloadActive()&&w>0){const strat=getDeloadStrategy(state.deloadActive.strategy);w=strat.apply(w)}
+    state.setWeight=w;state.setReps=r;state.setAssistWeight=0;render();
   }else{stopRest();finishWorkout()}
 }
 function skipExercise(){
   const day=state.selectedDay;
   if(state.exIndex<day.exercises.length-1){
     const next=day.exercises[state.exIndex+1];const nextPr=state.prRecords[next.id];
+    const lastW=state.lastWeights[next.id];
     const existing=state.sessionSets[next.id]||[];
     state.exIndex++;state.currentSet=existing.length+1;state.showSwapMenu=false;
-    state.setWeight=nextPr?nextPr.weight:0;state.setReps=nextPr?nextPr.reps:8;state.setAssistWeight=0;render();
+    let w=lastW?lastW.weight:(nextPr?nextPr.weight:0);
+    let r=lastW?lastW.reps:(nextPr?nextPr.reps:8);
+    if(isDeloadActive()&&w>0){const strat=getDeloadStrategy(state.deloadActive.strategy);w=strat.apply(w)}
+    state.setWeight=w;state.setReps=r;state.setAssistWeight=0;render();
   }else{stopRest();finishWorkout()}
 }
 function finishWorkout(){
@@ -1927,6 +2278,15 @@ function finishWorkout(){
         prCount++;prList.push({name:ex.name,weight:best.weight,reps:best.reps})}}
     }});
   if(entries.length===0){showToast('No sets logged');state.view='home';render();return}
+  // Save last used weights per exercise
+  day.exercises.forEach(ex=>{
+    const sets=state.sessionSets[ex.id];if(!sets)return;
+    const workSets=sets.filter(s=>s.tag!=='warmup');
+    if(workSets.length>0){
+      const heaviest=workSets.reduce((a,s)=>s.weight>a.weight?s:a,workSets[0]);
+      state.lastWeights[ex.id]={weight:heaviest.weight,reps:heaviest.reps,date:new Date().toISOString()};
+    }
+  });
   const session={date:new Date().toISOString(),dayId:day.id,dayName:day.name,dayColor:day.color,dayIcon:day.icon,exercises:entries};
   state.history=[session,...state.history];state.prRecords=newPrs;
   state.summaryData={session,prCount,prList,totalSets:entries.reduce((s,e)=>s+e.sets.length,0),totalVol};
@@ -1958,9 +2318,13 @@ state.restSeconds=store.get('rest')||90;
 state.customExercises=store.get('customEx')||[];
 state.exerciseNotes=store.get('exNotes')||{};
 state.progressPics=store.get('pics')||[];
-state.hypeEnabled=store.get('hype')!==false;
 state.deloadDismiss=store.get('deloadDismiss')||null;
-state.profile=store.get('profile')||{weight:'',weightUnit:'lbs',heightFt:'',heightIn:'',skillLevel:''};
+state.lastWeights=store.get('lastWeights')||{};
+state.deloadActive=store.get('deloadActive')||null;
+// Auto-expire deload if past end date
+if(state.deloadActive&&new Date(state.deloadActive.endDate).getTime()<Date.now()){state.deloadActive=null;store.set('deloadActive',null)}
+const savedProfile=store.get('profile')||{};
+state.profile={weight:savedProfile.weight||'',weightUnit:savedProfile.weightUnit||'lbs',skillLevel:savedProfile.skillLevel||''};
 state.wakeLockEnabled=false;
 // Re-acquire native wake lock if it was on (iOS video fallback requires user gesture so skip on init)
 if(store.get('wakeLock')&&'wakeLock' in navigator){navigator.wakeLock.request('screen').then(s=>{state.wakeLockSentinel=s;state.wakeLockEnabled=true;s.addEventListener('release',()=>{state.wakeLockEnabled=false;state.wakeLockSentinel=null})}).catch(()=>{})}

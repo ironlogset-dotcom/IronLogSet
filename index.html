@@ -1301,7 +1301,40 @@ function render(){
           h('div',{style:{display:'flex',alignItems:'center',gap:'6px'}},
             done>0?h('span',{style:{fontSize:'10px',fontWeight:'700',color:complete?'#3dd68c':day.color,background:complete?'rgba(61,214,140,0.12)':day.colorGlow,borderRadius:'6px',padding:'3px 8px'}},`${done}/${adjSets}`):null,
             h('span',{style:{fontSize:'16px',color:'var(--text3)'}},'\u203A')))));
-    });root.appendChild(exList);return;
+    });root.appendChild(exList);
+
+    // Warmup reminder overlay
+    if(state.showWarmupReminder){
+      const stretches=getWarmupStretches(day);
+      const muscleGroups=getDayMuscleGroups(day);
+      const overlay=h('div',{style:{position:'fixed',top:'0',left:'0',right:'0',bottom:'0',background:'rgba(0,0,0,0.7)',zIndex:'999',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px',animation:'fadeIn 0.2s ease'}});
+      const card=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'16px',padding:'24px',maxWidth:'340px',width:'100%',maxHeight:'80vh',overflowY:'auto'}});
+      card.appendChild(h('div',{style:{textAlign:'center',marginBottom:'14px'}},
+        h('div',{style:{fontSize:'28px',marginBottom:'8px'}},'\u{1F525}'),
+        h('div',{style:{fontSize:'14px',fontWeight:'800',color:'var(--text)',letterSpacing:'0.5px'}},'WARM UP FIRST')));
+      // Muscle groups targeted
+      if(muscleGroups.length>0){
+        card.appendChild(h('div',{style:{display:'flex',gap:'4px',flexWrap:'wrap',justifyContent:'center',marginBottom:'14px'}},
+          muscleGroups.map(g=>h('div',{style:{padding:'3px 8px',borderRadius:'6px',background:`${day.color}12`,border:`1px solid ${day.color}25`,fontSize:'9px',fontWeight:'700',letterSpacing:'0.5px',color:day.color,textTransform:'uppercase'}},g))));
+      }
+      // Suggested stretches
+      if(stretches.length>0){
+        card.appendChild(h('div',{style:{fontSize:'8px',fontWeight:'800',letterSpacing:'2px',color:'var(--text3)',marginBottom:'8px'}},'SUGGESTED STRETCHES'));
+        const stretchList=h('div',{style:{display:'flex',flexDirection:'column',gap:'6px',marginBottom:'16px'}});
+        stretches.forEach(s=>{
+          stretchList.appendChild(h('div',{style:{display:'flex',alignItems:'center',gap:'8px',padding:'6px 10px',borderRadius:'8px',background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.04)'}},
+            h('div',{style:{width:'6px',height:'6px',borderRadius:'50%',background:day.color,flexShrink:'0'}}),
+            h('div',{style:{fontSize:'11px',color:'var(--text2)',lineHeight:'1.4'}},s.stretch)));
+        });
+        card.appendChild(stretchList);
+      }
+      card.appendChild(h('button',{style:{width:'100%',padding:'12px',borderRadius:'10px',background:day.color,color:'#fff',fontSize:'13px',fontWeight:'800',letterSpacing:'1px'},
+        onClick:()=>{state.showWarmupReminder=false;openExercise(state.pendingExIdx)}},'LET\u2019S GO'));
+      overlay.appendChild(card);
+      overlay.addEventListener('click',e=>{if(e.target===overlay){state.showWarmupReminder=false;openExercise(state.pendingExIdx)}});
+      root.appendChild(overlay);
+    }
+    return;
   }
 
   // ═══════════════ FULLSCREEN EXERCISE ═══════════════
@@ -2203,9 +2236,60 @@ function render(){
 }
 
 // ── Actions ──
-function openDay(day){state.selectedDay=day;state.sessionSets={};state.sessionSwaps={};state.exIndex=0;stopRest();state.view='day';render()}
+function openDay(day){state.selectedDay=day;state.sessionSets={};state.sessionSwaps={};state.exIndex=0;state.warmupDismissed=false;stopRest();state.view='day';render()}
+const WARMUP_STRETCHES={
+  chest:['Doorway pec stretch (30s each side)','Arm circles \u2014 10 forward, 10 backward','Band pull-aparts \u00D7 15'],
+  shoulders:['Shoulder dislocates with band \u00D7 10','Cross-body arm stretch (20s each)','Wall slides \u00D7 10'],
+  triceps:['Overhead tricep stretch (20s each arm)','Arm circles \u2014 10 forward, 10 backward'],
+  back:['Cat-cow stretch \u00D7 10','Lat hang from pull-up bar (20s)','Thoracic rotations \u00D7 8 each side'],
+  lats:['Lat hang from pull-up bar (20s)','Side-bending lat stretch (20s each)','Child\u2019s pose with arms extended (30s)'],
+  biceps:['Doorway bicep stretch (20s each arm)','Wrist circles \u00D7 10 each direction'],
+  quads:['Standing quad stretch (20s each leg)','Walking lunges \u00D7 8 each leg','Leg swings \u2014 10 forward/back each leg'],
+  glutes:['Pigeon stretch (30s each side)','Glute bridges \u00D7 15','90/90 hip stretch (20s each side)'],
+  hamstrings:['Standing toe touch (20s)','Walking RDLs (bodyweight) \u00D7 8','Leg swings \u2014 10 forward/back each leg'],
+  calves:['Wall calf stretch (20s each leg)','Ankle circles \u00D7 10 each direction'],
+  core:['Cat-cow stretch \u00D7 10','Dead bugs (bodyweight) \u00D7 8 each side','Plank hold 20s'],
+  hips:['Hip circles \u00D7 10 each direction','Deep bodyweight squat hold (30s)','90/90 hip stretch (20s each side)'],
+};
+const MUSCLE_KEYWORDS={
+  chest:['chest','pec'],shoulders:['delt','shoulder'],triceps:['tricep'],
+  back:['back','rhomb','trap','posterior'],lats:['lat'],biceps:['bicep'],
+  quads:['quad'],glutes:['glute'],hamstrings:['hamstring','ham'],
+  calves:['calf','calve','soleus','gastroc'],core:['core','ab','oblique'],
+  hips:['hip','adduct'],
+};
+function getDayMuscleGroups(day){
+  const groups=new Set();
+  day.exercises.forEach(ex=>{
+    const info=getExInfo(ex.id);if(!info||!info.muscles)return;
+    const m=info.muscles.toLowerCase();
+    Object.entries(MUSCLE_KEYWORDS).forEach(([group,keywords])=>{
+      if(keywords.some(kw=>m.includes(kw)))groups.add(group);
+    });
+  });
+  return[...groups];
+}
+function getWarmupStretches(day){
+  const groups=getDayMuscleGroups(day);
+  const seen=new Set();const stretches=[];
+  // Prioritize primary muscle groups, pick 3-4 unique stretches
+  groups.forEach(g=>{
+    const s=WARMUP_STRETCHES[g];if(!s)return;
+    s.forEach(str=>{if(!seen.has(str)){seen.add(str);stretches.push({group:g,stretch:str})}});
+  });
+  return stretches.slice(0,5);
+}
 function openExercise(idx){
   const ex=state.selectedDay.exercises[idx];const existing=state.sessionSets[ex.id]||[];
+  // Warmup reminder — first exercise opened in session, no sets logged yet
+  const totalLogged=Object.values(state.sessionSets).flat().length;
+  if(totalLogged===0&&!state.warmupDismissed){
+    state.warmupDismissed=true;
+    state.warmupMsg=WARMUP_REMINDERS[Math.floor(Math.random()*WARMUP_REMINDERS.length)];
+    state.showWarmupReminder=true;
+    state.pendingExIdx=idx;
+    render();return;
+  }
   state.exIndex=idx;state.currentSet=existing.filter(s=>s.tag!=='warmup').length+1;state.setTag='normal';
   state.showDemo=false;state.showExInfo=false;state.showSwapMenu=false;
   const pr=state.prRecords[ex.id];const last=existing.length>0?existing[existing.length-1]:null;

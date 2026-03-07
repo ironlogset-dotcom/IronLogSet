@@ -1281,37 +1281,30 @@ function render(){
         onClick:()=>{const idx=state.days.findIndex(d=>d.id===day.id);if(idx>=0){state.editDayIdx=idx;state.view='editday';render()}}},'\u270F\uFE0F Edit')));
     root.appendChild(h('div',{style:{fontSize:'11px',color:'var(--text3)',marginBottom:'12px'}},day.weekday?`${day.weekday} \u2022 `:'','Tap an exercise to start logging.'));
 
-    // Warmup & Stretches section
+    // Warmup pill
     const stretches=getWarmupStretches(day);
-    const muscleGroups=getDayMuscleGroups(day);
     if(stretches.length>0){
-      const warmupSec=h('div',{style:{background:`${day.color}06`,border:`1px solid ${day.color}20`,borderRadius:'12px',marginBottom:'12px',overflow:'hidden'}});
-      const warmupHeader=h('button',{style:{width:'100%',padding:'12px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',color:'var(--text)'},
-        onClick:()=>{state.showWarmup=!state.showWarmup;render()}});
-      warmupHeader.appendChild(h('div',{style:{display:'flex',alignItems:'center',gap:'8px'}},
-        h('span',{style:{fontSize:'14px'}},'\u{1F525}'),
-        h('span',{style:{fontSize:'11px',fontWeight:'800',letterSpacing:'1px',color:day.color}},'WARM-UP & STRETCHES'),
-        h('div',{style:{display:'flex',gap:'3px',marginLeft:'4px'}},
-          muscleGroups.slice(0,3).map(g=>h('span',{style:{fontSize:'8px',color:'var(--text3)',background:'rgba(255,255,255,0.05)',padding:'1px 5px',borderRadius:'4px'}},g)))));
-      warmupHeader.appendChild(h('span',{style:{fontSize:'12px',color:'var(--text3)',transition:'transform 0.2s',transform:state.showWarmup?'rotate(180deg)':'rotate(0)'}},'\u25BC'));
-      warmupSec.appendChild(warmupHeader);
-      if(state.showWarmup){
-        const warmupBody=h('div',{style:{padding:'0 14px 14px',display:'flex',flexDirection:'column',gap:'6px'}});
-        // General warmup tip
-        warmupBody.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)',lineHeight:'1.5',marginBottom:'4px'}},'Start with 3\u20135 min of light cardio, then hit these stretches:'));
+      if(!state.showWarmup){
+        root.appendChild(h('button',{style:{display:'inline-flex',alignItems:'center',gap:'6px',padding:'6px 14px',borderRadius:'20px',background:`${day.color}10`,border:`1px solid ${day.color}25`,marginBottom:'12px',fontSize:'11px',fontWeight:'700',color:day.color},
+          onClick:()=>{state.showWarmup=true;render()}},'\u{1F525} Warm-Up & Stretches'));
+      }else{
+        // Backdrop — tap outside to close
+        const backdrop=h('div',{style:{position:'fixed',top:'0',left:'0',right:'0',bottom:'0',zIndex:'98'},onClick:()=>{state.showWarmup=false;render()}});
+        root.appendChild(backdrop);
+        const warmupSec=h('div',{style:{position:'relative',zIndex:'99',background:'var(--card)',border:`1px solid ${day.color}20`,borderRadius:'12px',padding:'14px',marginBottom:'12px'}});
+        warmupSec.appendChild(h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px'}},
+          h('span',{style:{fontSize:'10px',fontWeight:'800',letterSpacing:'1.5px',color:day.color}},'\u{1F525} WARM-UP & STRETCHES'),
+          h('button',{style:{background:'none',border:'none',fontSize:'10px',color:'var(--text3)',fontWeight:'600'},onClick:()=>{state.showWarmup=false;render()}},'\u2715')));
+        warmupSec.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)',lineHeight:'1.5',marginBottom:'10px'}},'3\u20135 min light cardio, then:'));
         stretches.forEach(s=>{
           const searchUrl=`https://www.youtube.com/results?search_query=${encodeURIComponent(s.stretch.split('(')[0].split('\u00D7')[0].trim()+' stretch how to proper form')}`;
-          const row=h('div',{style:{display:'flex',alignItems:'center',gap:'8px',padding:'8px 10px',borderRadius:'8px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.04)'}});
-          row.appendChild(h('div',{style:{width:'6px',height:'6px',borderRadius:'50%',background:day.color,flexShrink:'0'}}));
-          row.appendChild(h('div',{style:{flex:'1'}},
-            h('div',{style:{fontSize:'11px',fontWeight:'600',color:'var(--text)',lineHeight:'1.4'}},s.stretch),
-            h('div',{style:{fontSize:'9px',color:'var(--text3)',marginTop:'1px'}},s.group)));
-          row.appendChild(h('a',{href:searchUrl,target:'_blank',rel:'noopener',style:{fontSize:'9px',fontWeight:'700',color:day.color,textDecoration:'none',padding:'4px 8px',borderRadius:'6px',background:`${day.color}12`,border:`1px solid ${day.color}25`,flexShrink:'0',whiteSpace:'nowrap'}},'HOW-TO'));
-          warmupBody.appendChild(row);
+          warmupSec.appendChild(h('div',{style:{display:'flex',alignItems:'center',gap:'8px',padding:'6px 0',borderBottom:'1px solid rgba(255,255,255,0.03)'}},
+            h('div',{style:{width:'5px',height:'5px',borderRadius:'50%',background:day.color,flexShrink:'0'}}),
+            h('div',{style:{flex:'1',fontSize:'11px',color:'var(--text)',lineHeight:'1.4'}},s.stretch),
+            h('a',{href:searchUrl,target:'_blank',rel:'noopener',style:{fontSize:'9px',fontWeight:'700',color:day.color,textDecoration:'none',flexShrink:'0'}},'HOW-TO')));
         });
-        warmupSec.appendChild(warmupBody);
+        root.appendChild(warmupSec);
       }
-      root.appendChild(warmupSec);
     }
 
     // Session volume counter
@@ -2237,7 +2230,7 @@ function render(){
 }
 
 // ── Actions ──
-function openDay(day){state.selectedDay=day;state.sessionSets={};state.sessionSwaps={};state.exIndex=0;state.showWarmup=true;stopRest();state.view='day';render()}
+function openDay(day){state.selectedDay=day;state.sessionSets={};state.sessionSwaps={};state.exIndex=0;state.showWarmup=false;stopRest();state.view='day';render()}
 const WARMUP_STRETCHES={
   chest:['Doorway pec stretch (30s each side)','Arm circles \u2014 10 forward, 10 backward','Band pull-aparts \u00D7 15'],
   shoulders:['Shoulder dislocates with band \u00D7 10','Cross-body arm stretch (20s each)','Wall slides \u00D7 10'],

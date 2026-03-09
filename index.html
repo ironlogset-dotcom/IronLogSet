@@ -352,6 +352,11 @@ let state={
   barWeight:45, volumePeriod:0,
   calendarMonth:null,
   measurements:[], supersets:{},
+  // Multi-split
+  splits:[], // [{name:'PPL',days:[...]}, ...]
+  activeSplitIdx:0,
+  splitMenuOpen:false,
+  renamingSplit:null,
 };
 
 // ── Helpers ──
@@ -380,7 +385,36 @@ function showToast(msg){
   tc.appendChild(h('div',{className:'toast'},h('span',{},msg)));
   state.toastTimer=setTimeout(()=>{tc.innerHTML='';state.toastMsg=null},2800);
 }
-function save(){store.set('prs',state.prRecords);store.set('history',state.history);store.set('days',state.days);store.set('rest',state.restSeconds);store.set('customEx',state.customExercises);store.set('exNotes',state.exerciseNotes);store.set('profile',state.profile);store.set('lastWeights',state.lastWeights);store.set('deloadActive',state.deloadActive);store.set('measurements',state.measurements);store.set('supersets',state.supersets);store.set('barWeight',state.barWeight)}
+function save(){
+  // Sync active days back into splits
+  if(state.splits.length>0){state.splits[state.activeSplitIdx].days=state.days}
+  store.set('prs',state.prRecords);store.set('history',state.history);store.set('days',state.days);store.set('rest',state.restSeconds);store.set('customEx',state.customExercises);store.set('exNotes',state.exerciseNotes);store.set('profile',state.profile);store.set('lastWeights',state.lastWeights);store.set('deloadActive',state.deloadActive);store.set('measurements',state.measurements);store.set('supersets',state.supersets);store.set('barWeight',state.barWeight);store.set('splits',state.splits);store.set('activeSplitIdx',state.activeSplitIdx);
+}
+function switchSplit(idx){
+  // Save current days back
+  if(state.splits.length>0&&state.splits[state.activeSplitIdx]){state.splits[state.activeSplitIdx].days=state.days}
+  state.activeSplitIdx=idx;
+  state.days=state.splits[idx].days;
+  state.splitMenuOpen=false;
+  save();render();
+}
+function createSplit(name,days){
+  state.splits.push({name:name||('Split '+(state.splits.length+1)),days:days||[]});
+  switchSplit(state.splits.length-1);
+}
+function deleteSplit(idx){
+  if(state.splits.length<=1){showToast('Need at least one split');return}
+  state.splits.splice(idx,1);
+  if(state.activeSplitIdx>=state.splits.length)state.activeSplitIdx=state.splits.length-1;
+  state.days=state.splits[state.activeSplitIdx].days;
+  save();render();
+}
+function duplicateSplit(idx){
+  const src=state.splits[idx];
+  const copy={name:src.name+' (copy)',days:src.days.map(d=>({...d,exercises:d.exercises.map(e=>({...e}))}))};
+  state.splits.push(copy);
+  save();showToast('Split duplicated');render();
+}
 
 // ── Audio (Web Audio API) ──
 let audioCtx=null;
@@ -997,6 +1031,41 @@ function render(){
         h('button',{style:{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'10px',width:'36px',height:'36px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'15px'},onClick:()=>{state.view='measurements';render()}},'\u{1F4CF}'),
         h('button',{style:{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'10px',width:'36px',height:'36px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'15px'},onClick:()=>{state.view='settings';render()}},'\u2699\uFE0F'))
     ));
+
+    // Split switcher
+    if(state.splits.length>0){
+      const splitBar=h('div',{style:{display:'flex',alignItems:'center',gap:'6px',marginBottom:'12px'}});
+      const activeName=state.splits[state.activeSplitIdx]?state.splits[state.activeSplitIdx].name:'My Split';
+      splitBar.appendChild(h('button',{style:{flex:'1',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px',borderRadius:'10px',background:'var(--bg2)',border:'1px solid var(--border)',color:'var(--text)',fontSize:'11px',fontWeight:'700',letterSpacing:'1px'},
+        onClick:()=>{state.splitMenuOpen=!state.splitMenuOpen;render()}},
+        h('span',{},activeName.toUpperCase()),
+        h('span',{style:{fontSize:'8px',color:'var(--text3)',marginLeft:'6px'}},state.splitMenuOpen?'\u25B2':'\u25BC')));
+      splitBar.appendChild(h('button',{style:{width:'34px',height:'34px',borderRadius:'10px',background:'var(--bg2)',border:'1px solid var(--border)',color:'var(--accent)',fontSize:'16px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center'},
+        onClick:()=>{createSplit()}},'+'));
+      root.appendChild(splitBar);
+      if(state.splitMenuOpen){
+        const menu=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'12px',padding:'6px',marginBottom:'12px',animation:'fadeIn 0.2s ease'}});
+        state.splits.forEach((sp,si)=>{
+          const isActive=si===state.activeSplitIdx;
+          const row=h('div',{style:{display:'flex',alignItems:'center',gap:'6px',padding:'8px 10px',borderRadius:'8px',background:isActive?'rgba(232,116,10,0.08)':'transparent',marginBottom:'2px'}});
+          if(state.renamingSplit===si){
+            const inp=h('input',{type:'text',value:sp.name,style:{flex:'1',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'6px',padding:'4px 8px',color:'var(--text)',fontSize:'11px',fontWeight:'700'}});
+            inp.addEventListener('keydown',(e)=>{if(e.key==='Enter'){state.splits[si].name=inp.value||'Split';state.renamingSplit=null;save();render()}});
+            inp.addEventListener('blur',()=>{state.splits[si].name=inp.value||'Split';state.renamingSplit=null;save();render()});
+            row.appendChild(inp);
+            setTimeout(()=>inp.focus(),50);
+          }else{
+            row.appendChild(h('button',{style:{flex:'1',textAlign:'left',background:'none',color:isActive?'var(--accent)':'var(--text)',fontSize:'12px',fontWeight:isActive?'800':'600',letterSpacing:'0.5px'},
+              onClick:()=>{switchSplit(si)}},sp.name));
+            row.appendChild(h('button',{style:{background:'none',color:'var(--text3)',fontSize:'9px',fontWeight:'600',padding:'2px 6px'},onClick:()=>{state.renamingSplit=si;render()}},'\u270F'));
+            row.appendChild(h('button',{style:{background:'none',color:'var(--text3)',fontSize:'9px',fontWeight:'600',padding:'2px 6px'},onClick:()=>{duplicateSplit(si)}},'\u{1F4CB}'));
+            if(state.splits.length>1)row.appendChild(h('button',{style:{background:'none',color:'var(--text3)',fontSize:'9px',fontWeight:'600',padding:'2px 6px'},onClick:()=>{if(confirm(`Delete "${sp.name}"?`))deleteSplit(si)}},'\u2715'));
+          }
+          menu.appendChild(row);
+        });
+        root.appendChild(menu);
+      }
+    }
 
     // Tabs
     const tab=state.homeTab||'train';
@@ -2226,8 +2295,9 @@ function render(){
           h('div',{style:{fontSize:'9px',color:'var(--text3)',marginTop:'2px'}},tmpl.desc)),
         h('button',{style:{padding:'6px 14px',borderRadius:'8px',fontSize:'10px',fontWeight:'700',background:'rgba(255,255,255,0.06)',border:'1px solid var(--border)',color:'var(--text2)',marginLeft:'10px',flexShrink:'0'},
           onClick:()=>{
-            if(confirm(`Replace your current split with "${tmpl.name}"?\n\nYour workout history will be kept.`)){
-              state.days=tmpl.days.map(d=>({...d,exercises:d.exercises.map(e=>({...e}))}));save();
+            if(confirm(`Load "${tmpl.name}" as a new split?\n\nYour current split and history will be kept.`)){
+              const days=tmpl.days.map(d=>({...d,exercises:d.exercises.map(e=>({...e}))}));
+              createSplit(tmpl.name,days);
               showToast(`Loaded: ${tmpl.name}`);state.view='home';render();
             }
           }},'LOAD')));
@@ -2270,8 +2340,8 @@ function render(){
     dangerSec.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'800',letterSpacing:'2px',color:'var(--text3)',marginBottom:'12px'}},'DANGER ZONE'));
     dangerSec.appendChild(h('button',{style:{background:'rgba(232,116,10,0.08)',border:'1px solid rgba(232,116,10,0.25)',borderRadius:'10px',padding:'12px 20px',color:'#ff3d3d',fontSize:'12px',fontWeight:'700',width:'100%',letterSpacing:'1px'},onClick:()=>{
       if(confirm('Clear ALL data? This cannot be undone.')){
-        state.prRecords={};state.history=[];state.sessionSets={};state.days=[...DEFAULT_DAYS];state.customExercises=[];state.exerciseNotes={};state.progressPics=[];state.deloadDismiss=null;state.lastWeights={};state.deloadActive=null;
-        store.del('prs');store.del('history');store.del('days');store.del('customEx');store.del('exNotes');store.del('pics');store.del('deloadDismiss');store.del('lastWeights');store.del('deloadActive');store.del('launched');
+        state.prRecords={};state.history=[];state.sessionSets={};state.days=[];state.splits=[];state.activeSplitIdx=0;state.customExercises=[];state.exerciseNotes={};state.progressPics=[];state.deloadDismiss=null;state.lastWeights={};state.deloadActive=null;
+        store.del('prs');store.del('history');store.del('days');store.del('customEx');store.del('exNotes');store.del('pics');store.del('deloadDismiss');store.del('lastWeights');store.del('deloadActive');store.del('launched');store.del('splits');store.del('activeSplitIdx');
         showToast('All data cleared');state.view='home';render()}
     }},'\u26A0\uFE0F CLEAR ALL DATA'));
     root.appendChild(dangerSec);return;
@@ -2288,7 +2358,7 @@ function render(){
     PROGRAM_TEMPLATES.forEach((tmpl,i)=>{
       const active=false;
       root.appendChild(h('button',{style:{width:'100%',background:'var(--card)',border:`1px solid var(--border)`,borderRadius:'14px',padding:'16px',textAlign:'left',marginBottom:'10px',animation:`fadeIn 0.4s ease ${i*80}ms forwards`,opacity:'0',color:'var(--text)'},
-        onClick:()=>{state.days=tmpl.days.map(d=>({...d,exercises:d.exercises.map(e=>({...e}))}));save();store.set('launched',true);state.view='home';render()}},
+        onClick:()=>{const days=tmpl.days.map(d=>({...d,exercises:d.exercises.map(e=>({...e}))}));state.splits=[{name:tmpl.name,days}];state.activeSplitIdx=0;state.days=days;save();store.set('launched',true);state.view='home';render()}},
         h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'8px'}},
           h('div',{style:{fontSize:'15px',fontWeight:'900',color:'var(--text)'}},tmpl.name),
           h('div',{style:{fontSize:'8px',fontWeight:'700',letterSpacing:'1px',color:'var(--text3)',borderRadius:'4px',border:'1px solid var(--border)',padding:'2px 6px'}},tmpl.level)),
@@ -2296,7 +2366,7 @@ function render(){
         h('div',{style:{fontSize:'9px',color:'var(--text3)'}},`${tmpl.numDays} training days`)));
     });
     root.appendChild(h('button',{style:{width:'100%',padding:'14px',borderRadius:'14px',border:'1px solid var(--border)',background:'transparent',color:'var(--text3)',fontSize:'12px',fontWeight:'700',letterSpacing:'1px',marginTop:'8px'},
-      onClick:()=>{store.set('launched',true);state.view='home';render()}},'SKIP \u2014 I\'LL BUILD MY OWN'));
+      onClick:()=>{state.days=[];state.splits=[{name:'My Split',days:[]}];state.activeSplitIdx=0;save();store.set('launched',true);state.view='home';render()}},'SKIP \u2014 I\'LL BUILD MY OWN'));
     return;
   }
 
@@ -2716,7 +2786,21 @@ function updatePrInd(){
 // ── Init ──
 state.prRecords=store.get('prs')||{};
 state.history=store.get('history')||[];
-state.days=store.get('days')||[...DEFAULT_DAYS];
+state.splits=store.get('splits')||[];
+state.activeSplitIdx=store.get('activeSplitIdx')||0;
+// Load days — migrate existing users into splits system
+const savedDays=store.get('days');
+if(state.splits.length===0&&savedDays&&savedDays.length>0){
+  // Existing user: wrap their current days into a split
+  state.splits=[{name:'My Split',days:savedDays}];
+  state.activeSplitIdx=0;state.days=savedDays;
+}else if(state.splits.length>0){
+  // Multi-split user: load active split
+  if(state.activeSplitIdx>=state.splits.length)state.activeSplitIdx=0;
+  state.days=state.splits[state.activeSplitIdx].days;
+}else{
+  state.days=[...DEFAULT_DAYS];
+}
 state.restSeconds=store.get('rest')||90;
 state.customExercises=store.get('customEx')||[];
 state.exerciseNotes=store.get('exNotes')||{};

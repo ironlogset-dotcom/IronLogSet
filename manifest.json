@@ -1,7 +1,7 @@
 {
-  "name": "Iron Log — Workout Tracker",
-  "short_name": "Iron Log",
-  "description": "Track your lifts. Crush your PRs.",
+  "name": "Forge — Workout Tracker",
+  "short_name": "Forge",
+  "description": "Forge your body. Crush your PRs.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#08080f",

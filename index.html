@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Iron Log">
+<meta name="apple-mobile-web-app-title" content="Forge">
 <meta name="theme-color" content="#08080f">
 <meta name="description" content="Track your lifts. Crush your PRs.">
-<title>Iron Log</title>
+<title>Forge</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
@@ -47,7 +47,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent;border:none;c
 <div id="toast-container"></div>
 <script>
 // ═══════════════════════════════════════════════════════════
-// IRON LOG — PWA v5
+// FORGE — PWA v5
 // ═══════════════════════════════════════════════════════════
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
@@ -401,7 +401,7 @@ function playDing(){
 function notifyRestDone(){
   playDing();
   if('Notification' in window&&Notification.permission==='granted'){
-    try{navigator.serviceWorker.ready.then(reg=>{reg.showNotification('Iron Log',{body:'Rest complete! Go time.',icon:'./icon-192.png',tag:'rest-done',renotify:true})})}catch(e){}
+    try{navigator.serviceWorker.ready.then(reg=>{reg.showNotification('Forge',{body:'Rest complete! Go time.',icon:'./icon-192.png',tag:'rest-done',renotify:true})})}catch(e){}
   }
 }
 
@@ -446,7 +446,7 @@ function exportCSV(){
   });
   const blob=new Blob([csv],{type:'text/csv'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`ironlog-export-${new Date().toISOString().slice(0,10)}.csv`;
+  const a=document.createElement('a');a.href=url;a.download=`forge-export-${new Date().toISOString().slice(0,10)}.csv`;
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
   showToast('CSV downloaded \u2705');
 }
@@ -456,7 +456,7 @@ function exportJSON(){
   const data={exportDate:new Date().toISOString(),profile:state.profile,prRecords:state.prRecords,lastWeights:state.lastWeights,history:state.history,days:state.days,measurements:state.measurements};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`ironlog-backup-${new Date().toISOString().slice(0,10)}.json`;
+  const a=document.createElement('a');a.href=url;a.download=`forge-backup-${new Date().toISOString().slice(0,10)}.json`;
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
   showToast('JSON backup downloaded');
 }
@@ -989,7 +989,7 @@ function render(){
   if(state.view==='home'){
     // Header
     root.appendChild(h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'16px'}},
-      h('div',{style:{display:'flex',alignItems:'center',gap:'10px'}},h('span',{style:{fontSize:'24px'}},'\u26A1'),h('span',{style:{fontSize:'22px',fontWeight:'900',letterSpacing:'5px',color:'var(--accent)'}}, 'IRON LOG')),
+      h('div',{style:{display:'flex',alignItems:'center',gap:'10px'}},h('span',{style:{fontSize:'24px'}},'\u{1F525}'),h('span',{style:{fontSize:'22px',fontWeight:'900',letterSpacing:'5px',color:'var(--accent)'}}, 'THE FORGE')),
       h('div',{style:{display:'flex',gap:'5px'}},
         h('button',{style:{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'10px',width:'36px',height:'36px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'15px'},onClick:()=>{state.view='prs';render()}},'\u{1F3C6}'),
         h('button',{style:{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'10px',width:'36px',height:'36px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'15px'},onClick:()=>{const now=new Date();state.calendarMonth={year:now.getFullYear(),month:now.getMonth()};state.view='calendar';render()}},'\u{1F4C5}'),
@@ -2281,7 +2281,7 @@ function render(){
   if(state.view==='templatePicker'){
     root.appendChild(h('div',{style:{textAlign:'center',paddingTop:'32px',marginBottom:'32px'}},
       h('div',{style:{fontSize:'32px',marginBottom:'8px'}},'\u26A1'),
-      h('div',{style:{fontSize:'22px',fontWeight:'900',letterSpacing:'4px',color:'var(--accent)',marginBottom:'8px'}},'IRON LOG'),
+      h('div',{style:{fontSize:'22px',fontWeight:'900',letterSpacing:'4px',color:'var(--accent)',marginBottom:'8px'}},'THE FORGE'),
       h('div',{style:{fontSize:'13px',color:'var(--text2)'}},"Let's set up your training program.")));
 
     root.appendChild(h('div',{style:{fontSize:'10px',fontWeight:'800',letterSpacing:'3px',color:'var(--text3)',marginBottom:'16px'}},'CHOOSE A PROGRAM'));
@@ -2542,7 +2542,7 @@ function render(){
       {title:'The Science',body:'Research on periodization consistently shows that lifters who deload every 4\u20138 weeks achieve equal or better strength and hypertrophy results while training less total volume. Chronic high volume without breaks increases injury risk and blunts hormonal recovery signals.'},
       {title:'Signs You Need One',body:'\u2022 Rising RPE on the same weights\n\u2022 Strength declining across 2+ sessions\n\u2022 Persistent joint aches or tendon soreness\n\u2022 Loss of motivation to train\n\u2022 Poor sleep even on rest days\n\u2022 Feeling flat or depleted during warm-ups'},
       {title:'How to Deload',body:'Option A: Same exercises and rep ranges, reduce weight to 50\u201360% of normal loads.\n\nOption B: Same weights, cut number of sets by 40\u201350%.\n\nEither way: stay 2\u20133 reps from failure. No grinding, no PR attempts, no drop sets or intensity techniques. Use the week to focus on form and mind-muscle connection.'},
-      {title:'When to Deload',body:'Every 4\u20138 weeks depending on your training intensity. The harder and more frequently you train, the sooner you need one. Iron Log monitors your RPE trends, PR stagnation, and session frequency to recommend one automatically.'},
+      {title:'When to Deload',body:'Every 4\u20138 weeks depending on your training intensity. The harder and more frequently you train, the sooner you need one. Forge monitors your RPE trends, PR stagnation, and session frequency to recommend one automatically.'},
     ];
     sections.forEach((sec,i)=>{
       root.appendChild(h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'16px',marginBottom:'12px',animation:`fadeIn 0.4s ease ${i*60}ms forwards`,opacity:'0'}},

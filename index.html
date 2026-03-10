@@ -1162,10 +1162,11 @@ function render(){
         const trend=recentAvg-earlyAvg;
         // Determine verdict
         let verdict,verdictColor,verdictIcon,advice;
-        if(avg<=5.5){verdict='LIGHT';verdictColor='#6a9a5a';verdictIcon='\u{1F7E2}';advice='You have room to push harder. Increase weight or reps next session.'}
-        else if(avg<=7){verdict='SUSTAINABLE';verdictColor='#a8b868';verdictIcon='\u2705';advice='Good zone. You\'re training hard enough to grow without burning out.'}
-        else if(avg<=8){verdict='PUSHING IT';verdictColor='#e87a18';verdictIcon='\u{1F7E0}';advice=trend>0.5?'Intensity is climbing. A deload week may be coming soon.':'You\'re working hard. Watch for signs of fatigue.'}
-        else{verdict='BACK OFF';verdictColor='#cc2200';verdictIcon='\u{1F534}';advice='High sustained effort. You risk overtraining. Consider lighter sessions or a deload.'}
+        if(avg<6){verdict='LIGHT';verdictColor='#6a9a5a';verdictIcon='\u{1F7E2}';advice='You have room to push harder. Increase weight or reps to drive more adaptation.'}
+        else if(avg<7.5){verdict='BUILDING';verdictColor='#a8b868';verdictIcon='\u2705';advice='Good hypertrophy zone. Sustainable volume with room to grow.'}
+        else if(avg<8.5){verdict='DIALED IN';verdictColor='#d4a840';verdictIcon='\u{1F525}';advice=trend>0.5?'Sweet spot for strength gains. Intensity is trending up \u2014 keep an eye on recovery.':'Sweet spot. You\'re training hard enough to build strength while managing fatigue.'}
+        else if(avg<9.5){verdict='HEAVY BLOCK';verdictColor='#e87a18';verdictIcon='\u{1F7E0}';advice=trend>0.5?'High intensity and still climbing. Plan a deload in the next 1\u20132 weeks.':'Intensity is high. This is fine short-term, but don\'t sustain this for more than 2\u20133 weeks without a deload.'}
+        else{verdict='BACK OFF';verdictColor='#cc2200';verdictIcon='\u{1F534}';advice='You\'re grinding near failure almost every set. Injury risk is elevated. Take a deload week or reduce intensity.'}
         // Trend direction
         let trendText='';
         if(Math.abs(trend)>=0.3){trendText=trend>0?'Trending up from recent sessions':'Easing off from recent sessions'}
@@ -1188,19 +1189,23 @@ function render(){
         const gaugeWrap=h('div',{style:{marginBottom:'10px'}});
         const gauge=h('div',{style:{position:'relative',height:'8px',borderRadius:'4px',background:'rgba(255,255,255,0.04)',overflow:'hidden'}});
         // Zone backgrounds
-        gauge.appendChild(h('div',{style:{position:'absolute',left:'0',top:'0',bottom:'0',width:'35%',background:'linear-gradient(90deg,rgba(106,154,90,0.15),rgba(168,184,104,0.15))',borderRadius:'4px 0 0 4px'}}));
-        gauge.appendChild(h('div',{style:{position:'absolute',left:'35%',top:'0',bottom:'0',width:'30%',background:'rgba(232,122,24,0.1)'}}));
-        gauge.appendChild(h('div',{style:{position:'absolute',left:'65%',top:'0',bottom:'0',width:'35%',background:'linear-gradient(90deg,rgba(232,90,16,0.1),rgba(204,34,0,0.12))',borderRadius:'0 4px 4px 0'}}));
+        // Zones: <6=light(0-28%), 6-7.5=building(28-50%), 7.5-8.5=dialed(50-72%), 8.5-9.5=heavy(72-94%), 9.5+=backoff(94-100%)
+        gauge.appendChild(h('div',{style:{position:'absolute',left:'0',top:'0',bottom:'0',width:'28%',background:'rgba(106,154,90,0.15)',borderRadius:'4px 0 0 4px'}}));
+        gauge.appendChild(h('div',{style:{position:'absolute',left:'28%',top:'0',bottom:'0',width:'22%',background:'rgba(168,184,104,0.12)'}}));
+        gauge.appendChild(h('div',{style:{position:'absolute',left:'50%',top:'0',bottom:'0',width:'22%',background:'rgba(212,168,64,0.12)'}}));
+        gauge.appendChild(h('div',{style:{position:'absolute',left:'72%',top:'0',bottom:'0',width:'22%',background:'rgba(232,122,24,0.1)'}}));
+        gauge.appendChild(h('div',{style:{position:'absolute',left:'94%',top:'0',bottom:'0',width:'6%',background:'rgba(204,34,0,0.15)',borderRadius:'0 4px 4px 0'}}));
         // Needle position (RPE 1-10 mapped to 0-100%)
         const needlePos=Math.max(0,Math.min(100,((avg-1)/9)*100));
         gauge.appendChild(h('div',{style:{position:'absolute',left:`calc(${needlePos}% - 5px)`,top:'-2px',width:'10px',height:'12px',borderRadius:'3px',background:verdictColor,border:'2px solid var(--card)',boxShadow:`0 0 8px ${verdictColor}60`,transition:'left 0.5s ease'}}));
         gaugeWrap.appendChild(gauge);
         // Zone labels
-        gaugeWrap.appendChild(h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:'4px'}},
-          h('span',{style:{fontSize:'7px',fontWeight:'700',letterSpacing:'1px',color:'#6a9a5a'}},'LIGHT'),
-          h('span',{style:{fontSize:'7px',fontWeight:'700',letterSpacing:'1px',color:'#a8b868'}},'GOOD'),
-          h('span',{style:{fontSize:'7px',fontWeight:'700',letterSpacing:'1px',color:'#e87a18'}},'HARD'),
-          h('span',{style:{fontSize:'7px',fontWeight:'700',letterSpacing:'1px',color:'#cc2200'}},'MAX')));
+        gaugeWrap.appendChild(h('div',{style:{display:'flex',marginTop:'4px'}},
+          h('span',{style:{width:'28%',fontSize:'7px',fontWeight:'700',letterSpacing:'1px',color:'#6a9a5a',textAlign:'center'}},'LIGHT'),
+          h('span',{style:{width:'22%',fontSize:'7px',fontWeight:'700',letterSpacing:'1px',color:'#a8b868',textAlign:'center'}},'BUILD'),
+          h('span',{style:{width:'22%',fontSize:'7px',fontWeight:'700',letterSpacing:'1px',color:'#d4a840',textAlign:'center'}},'STRONG'),
+          h('span',{style:{width:'22%',fontSize:'7px',fontWeight:'700',letterSpacing:'1px',color:'#e87a18',textAlign:'center'}},'HEAVY'),
+          h('span',{style:{width:'6%',fontSize:'6px',fontWeight:'700',color:'#cc2200',textAlign:'center'}},'\u26A0')));
         tr.appendChild(gaugeWrap);
 
         // Advice

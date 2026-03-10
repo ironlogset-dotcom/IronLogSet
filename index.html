@@ -1557,32 +1557,29 @@ function render(){
         state.workoutStartTime?h('div',{id:'workout-timer',style:{fontSize:'11px',fontWeight:'600',color:'var(--text3)',fontVariantNumeric:'tabular-nums'}},fmtElapsed(Date.now()-state.workoutStartTime)):null,
         h('button',{style:{background:'none',color:'var(--text3)',fontSize:'12px',fontWeight:'600'},onClick:()=>skipExercise()},`${isLastEx?'Finish':'Skip'} \u203A`))));
 
-    // ── Header: exercise name + progress dots ──
-    const header=h('div',{style:{padding:'8px 20px 0',textAlign:'center'}});
-    header.appendChild(h('div',{style:{fontSize:'18px',fontWeight:'900',color:'var(--text)',marginBottom:'2px'}},displayName));
-    if(lastW){const lastE1rm=estimate1RM(lastW.weight,lastW.reps);header.appendChild(h('div',{style:{display:'inline-flex',alignItems:'center',gap:'8px',padding:'4px 12px',borderRadius:'8px',background:'rgba(255,255,255,0.03)',border:'1px solid var(--border)',marginBottom:'4px',fontSize:'10px'}},h('span',{style:{color:'var(--text3)'}},'Last:'),h('span',{style:{fontWeight:'700',color:'var(--text)'}},`${lastW.weight} x ${lastW.reps}`),h('span',{style:{color:'var(--text3)'}},'\u2022'),h('span',{style:{fontWeight:'700',color:'var(--gold)'}},`e1RM ${lastE1rm}`),h('span',{style:{color:'var(--text3)',fontSize:'9px'}},timeSince(lastW.date))))}
+    // ── Header: exercise name + compact progress ──
+    const header=h('div',{style:{padding:'6px 20px 0',textAlign:'center'}});
+    header.appendChild(h('div',{style:{fontSize:'18px',fontWeight:'900',color:'var(--text)',marginBottom:'4px'}},displayName));
     if(swap)header.appendChild(h('div',{style:{fontSize:'9px',color:'var(--text3)',marginBottom:'4px'}},'\u21BA from '+ex.name));
-    else if(ex.sub)header.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)',marginBottom:'4px'}},ex.sub));
     if(isDeloadActive()){
       const strat=getDeloadStrategy(state.deloadActive.strategy);
-      const lastW=state.lastWeights[ex.id];const origW=lastW?lastW.weight:(pr?pr.weight:0);
+      const lastW2=state.lastWeights[ex.id];const origW=lastW2?lastW2.weight:(pr?pr.weight:0);
       if(origW){header.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'700',color:strat.color,marginBottom:'4px'}},
         `DELOAD \u2022 Normal: ${origW}${state.profile.weightUnit||'lbs'}`));}
     }
-    // Compact progress: dots + set counter in one line
-    const progressLine=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'4px'}});
-    const dots=h('div',{style:{display:'flex',alignItems:'center',gap:'4px'}});
-    for(let i=0;i<warmupCount;i++)dots.appendChild(h('div',{style:{width:'5px',height:'5px',borderRadius:'50%',background:'rgba(255,165,0,0.5)'}}));
-    for(let i=0;i<adjSets;i++)dots.appendChild(h('div',{style:{width:i===state.currentSet-1?'16px':'6px',height:'6px',borderRadius:'3px',background:i<workCount?'#6a9a5a':i===state.currentSet-1?day.color:'rgba(255,255,255,0.08)',transition:'all 0.3s'}}));
-    progressLine.appendChild(dots);
-    progressLine.appendChild(h('span',{style:{fontSize:'10px',color:'var(--text3)'}},`${state.currentSet}/${adjSets}`));
-    if(pr)progressLine.appendChild(h('span',{style:{fontSize:'9px',color:'var(--gold)',fontWeight:'700'}},`PR ${pr.weight}\u00D7${pr.reps}`));
-    header.appendChild(progressLine);
-    // Target rep range badge
+    // Single compact line: dots · set count · target · PR
     const adjReps=skillRepRange(ex.repRange);
-    header.appendChild(h('div',{style:{display:'inline-flex',alignItems:'center',gap:'6px',padding:'4px 12px',borderRadius:'8px',background:`${day.color}10`,border:`1px solid ${day.color}20`,marginTop:'4px'}},
-      h('span',{style:{fontSize:'8px',fontWeight:'800',letterSpacing:'1.5px',color:day.color}},'TARGET'),
-      h('span',{style:{fontSize:'11px',fontWeight:'700',color:'var(--text)'}},`${adjSets} sets \u00D7 ${adjReps} reps`)));
+    const infoLine=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'2px',flexWrap:'wrap'}});
+    const dots=h('div',{style:{display:'flex',alignItems:'center',gap:'3px'}});
+    for(let i=0;i<warmupCount;i++)dots.appendChild(h('div',{style:{width:'5px',height:'5px',borderRadius:'50%',background:'rgba(255,165,0,0.5)'}}));
+    for(let i=0;i<adjSets;i++)dots.appendChild(h('div',{style:{width:i===state.currentSet-1?'14px':'5px',height:'5px',borderRadius:'3px',background:i<workCount?'#6a9a5a':i===state.currentSet-1?day.color:'rgba(255,255,255,0.08)',transition:'all 0.3s'}}));
+    infoLine.appendChild(dots);
+    infoLine.appendChild(h('span',{style:{fontSize:'10px',fontWeight:'700',color:'var(--text2)'}},`${state.currentSet}/${adjSets}`));
+    infoLine.appendChild(h('span',{style:{fontSize:'9px',color:'var(--text3)'}},'\u00B7'));
+    infoLine.appendChild(h('span',{style:{fontSize:'9px',color:'var(--text3)'}},`${adjReps} reps`));
+    if(pr){infoLine.appendChild(h('span',{style:{fontSize:'9px',color:'var(--text3)'}},'\u00B7'));infoLine.appendChild(h('span',{style:{fontSize:'9px',color:'var(--gold)',fontWeight:'700'}},`PR ${pr.weight}\u00D7${pr.reps}`))}
+    if(lastW){infoLine.appendChild(h('span',{style:{fontSize:'9px',color:'var(--text3)'}},'\u00B7'));infoLine.appendChild(h('span',{style:{fontSize:'9px',color:'var(--text3)'}},`Last ${lastW.weight}\u00D7${lastW.reps}`))}
+    header.appendChild(infoLine);
     root.appendChild(header);
 
     // ── Expandable panels (info/demo/swap) — tucked away ──
@@ -1645,16 +1642,19 @@ function render(){
       root.appendChild(panel);
     }
 
-    // ── Toolbar: subtle row of text links ──
+    // ── Toolbar: merged tools row ──
     if(!state.showDemo&&!state.showExInfo&&!state.showSwapMenu){
-      const toolbar=h('div',{className:'ex-toolbar'});
-      toolbar.appendChild(h('button',{onClick:()=>{state.showDemo=true;render()}},'\u{1F3AC} how-to'));
-      toolbar.appendChild(h('button',{onClick:()=>{state.showExInfo=true;render()}},'\u2139\uFE0F info'));
-      if(SUBSTITUTION_MAP[ex.id])toolbar.appendChild(h('button',{style:{color:swap?day.color:'var(--text3)'},onClick:()=>{state.showSwapMenu=true;render()}},swap?'\u{1F504} swapped':'\u{1F504} swap'));
+      const toolbar=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',padding:'2px 20px',flexWrap:'wrap'}});
+      const tbtn=(label,active,onClick)=>h('button',{style:{fontSize:'9px',fontWeight:'700',color:active?day.color:'var(--text3)',background:active?`${day.color}15`:'rgba(255,255,255,0.03)',border:`1px solid ${active?day.color+'30':'rgba(255,255,255,0.05)'}`,borderRadius:'6px',padding:'3px 8px'},onClick},label);
+      toolbar.appendChild(tbtn('\u{1F3AC}',false,()=>{state.showDemo=true;render()}));
+      toolbar.appendChild(tbtn('\u2139\uFE0F',false,()=>{state.showExInfo=true;render()}));
+      if(SUBSTITUTION_MAP[ex.id])toolbar.appendChild(tbtn(swap?'\u21BA':'\u{1F504}',!!swap,()=>{state.showSwapMenu=true;render()}));
       const noteVal=getExNote(ex.id);
-      toolbar.appendChild(h('button',{style:{color:noteVal?day.color:'var(--text3)'},onClick:()=>{
-        const val=prompt('Exercise note:',getExNote(ex.id));if(val!==null){setExNote(ex.id,val);render()}
-      }},noteVal?'\u{1F4DD} note':'\u{1F4DD} note'));
+      toolbar.appendChild(tbtn('\u{1F4DD}',!!noteVal,()=>{const val=prompt('Exercise note:',getExNote(ex.id));if(val!==null){setExNote(ex.id,val);render()}}));
+      if(state.setWeight>0&&!BW_EXERCISES.has(ex.id)){
+        toolbar.appendChild(tbtn('PLATES',state.showPlateCalc,()=>{state.showPlateCalc=!state.showPlateCalc;state.showWarmupCalc=false;render()}));
+        toolbar.appendChild(tbtn('WARM-UP',state.showWarmupCalc,()=>{state.showWarmupCalc=!state.showWarmupCalc;state.showPlateCalc=false;render()}));
+      }
       root.appendChild(toolbar);
     }
 
@@ -1669,36 +1669,29 @@ function render(){
       root.appendChild(restBox);
     }
 
-    // ── e1RM + Plate/Warmup tools ──
+    // ── e1RM display (inline, subtle) ──
     const currentE1rm=estimate1RM(state.setWeight,state.setReps);
-    const toolRow=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'12px',padding:'2px 0'}});
-    if(currentE1rm>0)toolRow.appendChild(h('span',{style:{fontSize:'10px',fontWeight:'700',color:'var(--gold)'}},`e1RM: ${currentE1rm}`));
-    if(state.setWeight>0&&!BW_EXERCISES.has(ex.id)){
-      toolRow.appendChild(h('button',{style:{fontSize:'9px',fontWeight:'700',color:state.showPlateCalc?day.color:'var(--text3)',background:state.showPlateCalc?`${day.color}15`:'rgba(255,255,255,0.03)',border:`1px solid ${state.showPlateCalc?day.color+'30':'var(--border)'}`,borderRadius:'6px',padding:'3px 8px'},onClick:()=>{state.showPlateCalc=!state.showPlateCalc;state.showWarmupCalc=false;render()}},'PLATES'));
-      toolRow.appendChild(h('button',{style:{fontSize:'9px',fontWeight:'700',color:state.showWarmupCalc?day.color:'var(--text3)',background:state.showWarmupCalc?`${day.color}15`:'rgba(255,255,255,0.03)',border:`1px solid ${state.showWarmupCalc?day.color+'30':'var(--border)'}`,borderRadius:'6px',padding:'3px 8px'},onClick:()=>{state.showWarmupCalc=!state.showWarmupCalc;state.showPlateCalc=false;render()}},'WARM-UP'));
-    }
-    root.appendChild(toolRow);
     if(state.showPlateCalc&&state.setWeight>0){const pp=h('div',{style:{margin:'0 20px 4px',background:'var(--card)',border:`1px solid ${day.color}20`,borderRadius:'10px',padding:'10px',animation:'fadeIn 0.2s ease'}});pp.appendChild(h('div',{style:{fontSize:'8px',fontWeight:'700',letterSpacing:'1.5px',color:day.color,marginBottom:'4px',textAlign:'center'}},'PLATE CALCULATOR'));renderPlateCalc(pp,state.setWeight,day.color);root.appendChild(pp)}
     if(state.showWarmupCalc&&state.setWeight>0){const wp=h('div',{style:{margin:'0 20px 4px',background:'var(--card)',border:`1px solid ${day.color}20`,borderRadius:'10px',padding:'10px',animation:'fadeIn 0.2s ease'}});wp.appendChild(h('div',{style:{fontSize:'8px',fontWeight:'700',letterSpacing:'1.5px',color:day.color,marginBottom:'8px',textAlign:'center'}},'WARM-UP RAMP'));const ws=calcWarmupSets(state.setWeight);const unit=state.profile.weightUnit||'lbs';if(ws.length===0)wp.appendChild(h('div',{style:{textAlign:'center',fontSize:'10px',color:'var(--text3)'}},'Weight too low'));else{ws.forEach((s,i)=>{wp.appendChild(h('div',{style:{display:'flex',alignItems:'center',gap:'10px',padding:'6px 0',borderBottom:i<ws.length-1?'1px solid rgba(255,255,255,0.03)':'none'}},h('div',{style:{width:'36px',fontSize:'9px',fontWeight:'700',color:!s.pct?'var(--text3)':day.color,textAlign:'center'}},!s.pct?'BAR':`${s.pct}%`),h('div',{style:{flex:'1'}},h('span',{style:{fontSize:'13px',fontWeight:'800',color:'var(--text)'}},`${s.weight} ${unit}`),h('span',{style:{fontSize:'10px',color:'var(--text3)',marginLeft:'8px'}},`x ${s.reps} reps`))))});wp.appendChild(h('div',{style:{display:'flex',alignItems:'center',gap:'10px',padding:'8px 0',borderTop:'1px solid rgba(255,255,255,0.06)'}},h('div',{style:{width:'36px',fontSize:'9px',fontWeight:'800',color:'#6a9a5a',textAlign:'center'}},'WORK'),h('div',{style:{flex:'1'}},h('span',{style:{fontSize:'13px',fontWeight:'900',color:'#6a9a5a'}},`${state.setWeight} ${unit}`),h('span',{style:{fontSize:'10px',color:'var(--text3)',marginLeft:'8px'}},`x ${state.setReps} reps`))))}root.appendChild(wp)}
 
-    // ── Weight + Reps with quick adjust ──
+    // ── Weight + Reps: compact quick-adjust + scroll pickers ──
     const pickerSection=h('div',{style:{flex:'1',display:'flex',flexDirection:'column',minHeight:'0'}});
-    const qBtnStyle=(big)=>({width:big?'44px':'36px',height:'32px',borderRadius:'8px',background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',color:'var(--text2)',fontSize:big?'13px':'11px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center'});
-    const quickRow=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',padding:'0 20px 4px'}});
-    quickRow.appendChild(h('button',{style:qBtnStyle(false),onClick:()=>{state.setWeight=Math.max(0,state.setWeight-5);updatePrInd();render()}},'-5'));
-    quickRow.appendChild(h('button',{style:qBtnStyle(false),onClick:()=>{state.setWeight=Math.max(0,state.setWeight-2.5);updatePrInd();render()}},'-2.5'));
-    quickRow.appendChild(h('div',{style:{minWidth:'70px',textAlign:'center',fontSize:'22px',fontWeight:'900',color:day.color}},state.setWeight===0?'BW':state.setWeight%1===0?String(state.setWeight):state.setWeight.toFixed(1)));
-    quickRow.appendChild(h('button',{style:qBtnStyle(false),onClick:()=>{state.setWeight=Math.min(1500,state.setWeight+2.5);updatePrInd();render()}},'+2.5'));
-    quickRow.appendChild(h('button',{style:qBtnStyle(false),onClick:()=>{state.setWeight=Math.min(1500,state.setWeight+5);updatePrInd();render()}},'+5'));
-    quickRow.appendChild(h('div',{style:{width:'1px',height:'24px',background:'rgba(255,255,255,0.06)',margin:'0 2px',flexShrink:'0'}}));
-    quickRow.appendChild(h('button',{style:qBtnStyle(false),onClick:()=>{state.setReps=Math.max(1,state.setReps-1);updatePrInd();render()}},'-1'));
-    quickRow.appendChild(h('div',{style:{minWidth:'36px',textAlign:'center',fontSize:'22px',fontWeight:'900',color:day.color}},String(state.setReps)));
-    quickRow.appendChild(h('button',{style:qBtnStyle(false),onClick:()=>{state.setReps=Math.min(50,state.setReps+1);updatePrInd();render()}},'+1'));
-    pickerSection.appendChild(quickRow);
-    const bigRow=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',padding:'0 20px 2px'}});
-    [[-45,'-45'],[-25,'-25'],[-10,'-10'],[10,'+10'],[25,'+25'],[45,'+45']].forEach(([d,l])=>{bigRow.appendChild(h('button',{style:{padding:'4px 8px',borderRadius:'6px',fontSize:'9px',fontWeight:'600',background:'rgba(255,255,255,0.03)',border:'1px solid var(--border)',color:'var(--text3)'},onClick:()=>{state.setWeight=Math.max(0,Math.min(1500,state.setWeight+d));updatePrInd();render()}},l))});
-    pickerSection.appendChild(bigRow);
-    pickerSection.appendChild(h('div',{style:{display:'flex',justifyContent:'center',gap:'40px',marginBottom:'2px'}},h('span',{style:{fontSize:'8px',fontWeight:'700',letterSpacing:'2px',color:'var(--text3)'}},'WEIGHT'),h('span',{style:{fontSize:'8px',fontWeight:'700',letterSpacing:'2px',color:'var(--text3)'}},'REPS')));
+    const qBtn=(label,onClick)=>h('button',{style:{minWidth:'32px',height:'30px',borderRadius:'8px',background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',color:'var(--text2)',fontSize:'11px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center'},onClick},label);
+    // e1RM inline
+    if(currentE1rm>0)pickerSection.appendChild(h('div',{style:{textAlign:'center',padding:'0 0 2px'}},h('span',{style:{fontSize:'10px',fontWeight:'700',color:'var(--gold)'}},`e1RM: ${currentE1rm}`)));
+    // Weight quick row
+    const wRow=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'4px',padding:'0 16px 2px'}});
+    [[-45,'-45'],[-10,'-10'],[-5,'-5'],[-2.5,'-2.5']].forEach(([d,l])=>{wRow.appendChild(qBtn(l,()=>{state.setWeight=Math.max(0,state.setWeight+d);updatePrInd();render()}))});
+    wRow.appendChild(h('div',{style:{minWidth:'64px',textAlign:'center',fontSize:'24px',fontWeight:'900',color:day.color,padding:'0 4px'}},state.setWeight===0?'BW':state.setWeight%1===0?String(state.setWeight):state.setWeight.toFixed(1)));
+    [[2.5,'+2.5'],[5,'+5'],[10,'+10'],[45,'+45']].forEach(([d,l])=>{wRow.appendChild(qBtn(l,()=>{state.setWeight=Math.min(1500,state.setWeight+d);updatePrInd();render()}))});
+    pickerSection.appendChild(wRow);
+    // Reps quick row
+    const rRow=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',padding:'0 16px 4px'}});
+    rRow.appendChild(qBtn('-1',()=>{state.setReps=Math.max(1,state.setReps-1);updatePrInd();render()}));
+    rRow.appendChild(h('div',{style:{minWidth:'48px',textAlign:'center'}},h('span',{style:{fontSize:'10px',fontWeight:'700',letterSpacing:'2px',color:'var(--text3)'}},'REPS'),h('div',{style:{fontSize:'22px',fontWeight:'900',color:day.color}},String(state.setReps))));
+    rRow.appendChild(qBtn('+1',()=>{state.setReps=Math.min(50,state.setReps+1);updatePrInd();render()}));
+    pickerSection.appendChild(rRow);
+    // Scroll pickers (weight + reps)
     const pickerRow=h('div',{style:{flex:'1',display:'flex',alignItems:'center',justifyContent:'center',padding:'0 24px',gap:'16px',minHeight:'0'}});
     pickerRow.appendChild(createPicker(WEIGHTS,state.setWeight,v=>{state.setWeight=v;updatePrInd()},'',v=>v===0?'BW':v%1===0?v:v.toFixed(1),day.color));
     pickerRow.appendChild(h('div',{style:{width:'1px',height:'80px',background:'rgba(255,255,255,0.06)',flexShrink:'0'}}));

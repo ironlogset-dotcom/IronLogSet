@@ -1063,7 +1063,8 @@ function render(){
         h('button',{style:{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'10px',width:'36px',height:'36px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'15px'},onClick:()=>{const now=new Date();state.calendarMonth={year:now.getFullYear(),month:now.getMonth()};state.view='calendar';render()}},'\u{1F4C5}'),
         h('button',{style:{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'10px',width:'36px',height:'36px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'15px'},onClick:()=>{state.view='volume';render()}},'\u{1F4CA}'),
         h('button',{style:{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'10px',width:'36px',height:'36px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'15px'},onClick:()=>{state.view='measurements';render()}},'\u{1F4CF}'),
-        h('button',{style:{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'10px',width:'36px',height:'36px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'15px'},onClick:()=>{state.view='settings';render()}},'\u2699\uFE0F'))
+        h('button',{style:{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'10px',width:'36px',height:'36px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'15px'},onClick:()=>{state.view='settings';render()}},'\u2699\uFE0F'),
+        h('button',{style:{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'10px',width:'36px',height:'36px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'15px'},onClick:()=>{state.view='guide';render()}},'\u{1F4D6}'))
     ));
 
     // Split switcher
@@ -2249,29 +2250,9 @@ function render(){
     rpeSec.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)',lineHeight:'1.6',marginTop:'8px'}},RPE_GUIDE.progression));
     root.appendChild(rpeSec);
 
-    // ── App Tutorial ──
-    const tutSec=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'16px',marginBottom:'16px'}});
-    tutSec.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'800',letterSpacing:'2px',color:'var(--text3)',marginBottom:'12px'}},'\u{1F4D6} APP TUTORIAL'));
-    const tutorials=[
-      {icon:'\u{1F3CB}',title:'Starting a Workout',desc:'Tap a day card on the home screen. You\u2019ll see your exercises listed — tap any to start logging. Sets auto-advance when you hit your target.'},
-      {icon:'\u{1F3AF}',title:'Set Tags',desc:'Before logging, tag your set: Normal (working set), Warmup (won\u2019t count toward set total or PRs), Drop (reduced weight), or Failure (hit muscle failure).'},
-      {icon:'\u{1F4CA}',title:'RPE Tracking',desc:'Rate each set 1-10 for how hard it felt. The app calculates your session average and flags weak areas where effort was unusually high.'},
-      {icon:'\u{1F3AC}',title:'How-To Videos',desc:'Tap HOW-TO on any exercise to see a form video clip. Tap to play inline or open the full YouTube tutorial.'},
-      {icon:'\u2139\uFE0F',title:'Exercise Info',desc:'Tap INFO to see target muscles, tips, and form cues for each exercise.'},
-      {icon:'\u{1F4DD}',title:'Exercise Notes',desc:'Tap the note icon below any exercise name to save personal notes — machine settings, injury modifications, grip preferences, etc.'},
-      {icon:'\u{1F4F8}',title:'Progress Pics',desc:'Capture progress photos from the home screen. They\u2019re stored locally with timestamps so you can track visual changes over time.'},
-      {icon:'\u21A9',title:'Undo Set',desc:'Made a mistake? Tap "Undo last set" above the LOG button to remove and re-do it.'},
-      {icon:'\u{1F4C8}',title:'Progress Charts',desc:'From session history, tap an exercise to see your volume trend over time as a chart.'},
-      {icon:'\u2699\uFE0F',title:'Customize Split',desc:'Edit your entire training split in Settings — add/remove days, reorder exercises, change sets/reps, assign day schedules.'},
-      {icon:'\u{1F506}',title:'Keep Screen On',desc:'Toggle in Settings to prevent your phone from dimming mid-set. Note: uses more battery.'},
-      {icon:'\u{1F4E5}',title:'Export Data',desc:'Export all workout history as a CSV file for analysis in Excel or Google Sheets.'},
-    ];
-    tutorials.forEach(t=>{
-      tutSec.appendChild(h('div',{style:{display:'flex',gap:'10px',padding:'8px 0',borderBottom:'1px solid rgba(255,255,255,0.03)'}},
-        h('div',{style:{fontSize:'18px',minWidth:'28px',textAlign:'center'}},t.icon),
-        h('div',{},h('div',{style:{fontSize:'11px',fontWeight:'700',color:'var(--text)'}},t.title),h('div',{style:{fontSize:'10px',color:'var(--text3)',lineHeight:'1.5',marginTop:'2px'}},t.desc))));
-    });
-    root.appendChild(tutSec);
+    // ── Guide Link ──
+    root.appendChild(h('button',{style:{width:'100%',padding:'12px',borderRadius:'14px',background:'var(--card)',border:'1px solid var(--border)',color:'var(--text2)',fontSize:'12px',fontWeight:'700',letterSpacing:'1px',marginBottom:'16px',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'},
+      onClick:()=>{state.view='guide';render()}},'\u{1F4D6} FULL USER GUIDE'));
 
     // ── Progress Pics ──
     const picSec=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'16px',marginBottom:'16px'}});
@@ -2375,6 +2356,111 @@ function render(){
         showToast('All data cleared');state.view='home';render()}
     }},'\u26A0\uFE0F CLEAR ALL DATA'));
     root.appendChild(dangerSec);return;
+  }
+
+  // ═══════════════ BETA GUIDE ═══════════════
+  if(state.view==='guide'){
+    root.appendChild(h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'20px'}},
+      h('button',{style:{background:'none',color:'var(--text2)',fontSize:'14px',fontWeight:'600'},onClick:()=>{state.view='home';render()}},'\u2190 Back'),
+      h('div',{style:{fontSize:'12px',fontWeight:'800',letterSpacing:'3px',color:'var(--text2)'}},'USER GUIDE'),h('div',{style:{width:'50px'}})));
+
+    // Version badge
+    root.appendChild(h('div',{style:{textAlign:'center',marginBottom:'20px'}},
+      h('div',{style:{fontSize:'28px',marginBottom:'6px'}},'\u{1F525}'),
+      h('div',{style:{fontSize:'18px',fontWeight:'900',letterSpacing:'4px',color:'var(--accent)',marginBottom:'4px'}},'THE FORGE'),
+      h('div',{style:{fontSize:'10px',color:'var(--text3)'}},'Beta v28 \u2022 Updated March 2026')));
+
+    const GUIDE_SECTIONS=[
+      {title:'GETTING STARTED',items:[
+        {name:'Choose a Program',desc:'When you first open Forge, pick from 3 built-in programs (Bro Split, Push/Pull/Legs, Upper/Lower) or skip to build your own from scratch. You can always change this later.'},
+        {name:'Your Training Split',desc:'The home screen shows your weekly training days as cards. Each card is a workout day with a name, icon, color, and list of exercises. Tap a card to start that workout.'},
+        {name:'Multiple Splits',desc:'Tap the split name at the top of the home screen to switch between programs. Use the + button to create new splits. You can rename, duplicate, or delete splits from the dropdown.'},
+        {name:'Assign Days to Weekdays',desc:'In Settings \u2192 Edit Split \u2192 REORDER, tap the day badge to assign each workout to a specific weekday (Mon, Tue, etc). Today\'s workout will be highlighted on the home screen.'},
+      ]},
+      {title:'LOGGING A WORKOUT',items:[
+        {name:'Starting a Workout',desc:'Tap a day card on the home screen to see your exercises. Tap any exercise to start logging sets. A workout timer starts automatically with your first logged set.'},
+        {name:'Logging a Set',desc:'Set your weight using the quick-adjust buttons (-45 to +45) or scroll the weight picker. Set your reps. Choose a tag (Normal, Warmup, Drop, or Failure). Rate your RPE. Hit LOG SET.'},
+        {name:'Set Tags',desc:'NORMAL = working set (counts toward PRs and volume). WARMUP = light set (won\'t count toward set total or PRs). DROP = reduced weight continuation. FAILURE = hit muscle failure (logged but flagged).'},
+        {name:'RPE (Rate of Perceived Exertion)',desc:'After each set, rate how hard it was on a 1-10 scale. RPE 7 = could do 3 more reps. RPE 8 = 2 more. RPE 9 = 1 more. RPE 10 = absolute max. This drives the Intensity Insight on the home screen.'},
+        {name:'Undo Last Set',desc:'Made a mistake? The UNDO button appears after logging a set. Tap it to remove the last logged set and redo it.'},
+        {name:'Skip / Finish',desc:'Top-right corner during an exercise — tap Skip to move to the next exercise, or Finish if it\'s the last one.'},
+        {name:'Workout Notes',desc:'On the day overview screen, there\'s a notes field at the bottom. Jot down how the session felt, injuries, or anything you want to remember.'},
+      ]},
+      {title:'WEIGHT & REPS TOOLS',items:[
+        {name:'Quick-Adjust Buttons',desc:'The weight row has buttons from -45 to +45 for fast plate-math jumps. The reps row has -1/+1. You can also use the scroll pickers below for fine-tuning.'},
+        {name:'e1RM (Estimated 1-Rep Max)',desc:'Shown above the weight picker. Calculated using the Epley formula: weight \u00D7 (1 + reps/30). This estimates the heaviest single rep you could do based on your current set.'},
+        {name:'Plate Calculator',desc:'Tap PLATES in the toolbar during an exercise. Shows exactly which plates to load on each side of the bar based on your selected weight and bar weight (configurable in Settings).'},
+        {name:'Warm-Up Ramp',desc:'Tap WARM-UP in the toolbar. Generates a warm-up progression: bar only \u2192 40% \u2192 60% \u2192 80% \u2192 working weight, with suggested reps for each.'},
+        {name:'Weight Range',desc:'The weight selector goes up to 1,500 lbs to accommodate heavy compound movements like leg press.'},
+      ]},
+      {title:'EXERCISE TOOLS',items:[
+        {name:'How-To Videos',desc:'Tap the \u{1F3AC} icon on any exercise to see a form video. Plays inline or links to the full YouTube tutorial.'},
+        {name:'Exercise Info',desc:'Tap the \u2139\uFE0F icon to see target muscles, form tips, injury risk warnings, and form cues for the current exercise.'},
+        {name:'Exercise Notes',desc:'Tap the \u{1F4DD} icon to save personal notes for an exercise — machine settings, grip preferences, injury modifications. Notes persist across sessions.'},
+        {name:'Exercise Substitution (Swap)',desc:'Tap the \u{1F504} icon to swap an exercise for a similar movement. Options are rated Good / Better / Best. Swaps only last for the current session.'},
+        {name:'Assisted Movements',desc:'For pullups, dips, and other bodyweight exercises, an assist weight option appears. Set the amount of assistance (e.g., band or machine counterweight) and it\'s tracked separately.'},
+        {name:'Custom Exercises',desc:'In the exercise library (when editing a day), scroll to the bottom and tap CREATE CUSTOM EXERCISE. Give it a name and category, and it\'s available to add to any workout day.'},
+      ]},
+      {title:'SUPERSETS',items:[
+        {name:'What Supersets Do',desc:'Pair two exercises to alternate between them with no rest. After logging a set of Exercise A, Forge automatically jumps to Exercise B, then back to A.'},
+        {name:'Setting Up Supersets',desc:'On the day overview screen, tap SUPERSETS. Select two exercises to pair. Forge analyzes the pairing and warns you if it\'s counterproductive (same muscle group, both heavy compounds, etc).'},
+        {name:'Smart Pairing Analysis',desc:'Forge checks muscle groups, movement patterns, and exercise type. Antagonist pairs (push + pull) and upper/lower pairs get a thumbs up. Same-muscle or compound+compound pairs get a warning.'},
+      ]},
+      {title:'TRACKING & ANALYTICS',items:[
+        {name:'Personal Records (PRs)',desc:'Tap the \u{1F3C6} trophy icon from the home screen. Shows all your PRs ranked by estimated 1RM, with total strength estimate for main compound lifts.'},
+        {name:'Calendar View',desc:'Tap the \u{1F4C5} calendar icon. See a monthly grid with dots on days you trained. Tap a date to jump to that session in your history.'},
+        {name:'Volume by Muscle Group',desc:'Tap the \u{1F4CA} chart icon. See weekly/monthly volume broken down by muscle group with push/pull balance indicator.'},
+        {name:'Workout History',desc:'Accessible from the Insights tab. Every session is logged with date, day name, RPE, total volume, and duration. Tap to expand and see individual exercises with e1RM.'},
+        {name:'Progress Charts',desc:'From workout history, tap the \u{1F4C8} Chart button on any exercise to see your volume trend over time.'},
+        {name:'Intensity Insight',desc:'On the Insights tab, the "How Hard Are You Training?" card analyzes your recent RPE averages and gives a plain-English verdict: LIGHT (push harder), BUILDING (good hypertrophy zone), DIALED IN (sweet spot), HEAVY BLOCK (plan a deload), or BACK OFF (reduce intensity).'},
+        {name:'Workout Streak',desc:'Tracks consecutive weeks with at least one workout. Shown on the Insights tab.'},
+      ]},
+      {title:'BODY MEASUREMENTS',items:[
+        {name:'Logging Measurements',desc:'Tap the \u{1F4CF} ruler icon from the home screen. Enter body weight, body fat %, chest, waist, arms, and hips. Each entry is timestamped.'},
+        {name:'Trends',desc:'When you have 2+ entries, Forge shows trend arrows. Green = improving, orange = regressing. It\'s context-aware: for waist and body fat, going DOWN is good.'},
+        {name:'Body Weight Sync',desc:'When you log body weight in measurements, it automatically updates your profile so relative strength calculations (e.g., 1.5x BW) stay accurate.'},
+      ]},
+      {title:'DELOAD SYSTEM',items:[
+        {name:'What is a Deload?',desc:'A planned easy week to let your body recover. Every 4-8 weeks of hard training, a deload prevents burnout and injury.'},
+        {name:'Automatic Detection',desc:'Forge monitors your RPE trends, training frequency, and PR stagnation. When it detects you may need a deload, a banner appears on the home screen.'},
+        {name:'Deload Strategies',desc:'Choose from Light (reduce weight 40-60%), Volume (cut sets in half), or Easy (do whatever feels good). Each lasts one week.'},
+        {name:'Manual Deload',desc:'You can also start a deload manually from Settings \u2192 Deload \u2192 START.'},
+      ]},
+      {title:'SETTINGS & DATA',items:[
+        {name:'Skill Level',desc:'Set to Novice, Intermediate, or Advanced in Settings \u2192 Profile. This adjusts rep ranges and shows beginner warnings on complex exercises.'},
+        {name:'Units',desc:'Toggle between lbs and kg in Settings \u2192 Profile. Affects all weight displays throughout the app.'},
+        {name:'Bar Weight',desc:'Set your default barbell weight (35, 45, or 55 lbs) in Settings. Used by the plate calculator.'},
+        {name:'Keep Screen On',desc:'Toggle in Settings to prevent your phone from dimming during workouts. Uses more battery.'},
+        {name:'Edit Your Split',desc:'Settings \u2192 Programs section. Load a template or tap REORDER to rearrange days, add/remove days, edit exercises, change colors and icons.'},
+        {name:'Backup & Restore',desc:'Settings \u2192 Backup & Restore. EXPORT saves all your data as a JSON file. IMPORT loads a backup file to restore your data. Use this before major changes.'},
+        {name:'CSV Export',desc:'Settings \u2192 Data section. Export all workout history as a spreadsheet-compatible CSV file.'},
+        {name:'Rest Timer',desc:'After logging a set, a 90-second rest timer starts automatically (configurable). An audio ding plays when rest is over.'},
+      ]},
+      {title:'BETA TESTER NOTES',items:[
+        {name:'How to Report Bugs',desc:'Screenshot the issue and send it to the group chat with a description of what you were doing when it happened. Include your phone model and browser.'},
+        {name:'Data is Local Only',desc:'Right now all your data lives on your phone. If you clear your browser data, it\'s gone. Use the JSON export in Settings to back up regularly.'},
+        {name:'Updates are Automatic',desc:'When a new version is pushed, close the app completely and reopen it. The service worker will fetch the update. You may need to do this twice.'},
+        {name:'Known Limitations',desc:'No cloud sync yet (coming before launch). No account system yet. Progress photos are stored in browser storage and may be cleared by iOS to free space.'},
+      ]},
+    ];
+
+    GUIDE_SECTIONS.forEach((sec,si)=>{
+      const card=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'16px',marginBottom:'12px',animation:`fadeIn 0.3s ease ${si*40}ms forwards`,opacity:'0'}});
+      card.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'800',letterSpacing:'2px',color:'var(--accent)',marginBottom:'12px'}},sec.title));
+      sec.items.forEach((item,ii)=>{
+        const row=h('div',{style:{padding:'8px 0',borderTop:ii>0?'1px solid rgba(255,255,255,0.03)':'none'}});
+        row.appendChild(h('div',{style:{fontSize:'12px',fontWeight:'700',color:'var(--text)',marginBottom:'3px'}},item.name));
+        row.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text2)',lineHeight:'1.6'}},item.desc));
+        card.appendChild(row);
+      });
+      root.appendChild(card);
+    });
+
+    // Footer
+    root.appendChild(h('div',{style:{textAlign:'center',padding:'20px 0 40px',color:'var(--text3)',fontSize:'10px',lineHeight:'1.8'}},
+      h('div',{},'Questions? Send a message to the group chat.'),
+      h('div',{style:{marginTop:'8px',fontSize:'9px',color:'var(--text3)',opacity:'0.5'}},'This guide will be removed before public launch.')));
+    return;
   }
 
   // ═══════════════ TEMPLATE PICKER (first launch) ═══════════════

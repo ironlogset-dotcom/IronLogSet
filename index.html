@@ -495,6 +495,40 @@ function exportJSON(){
   showToast('JSON backup downloaded');
 }
 
+// ── JSON Import ──
+function importJSON(){
+  const input=document.createElement('input');input.type='file';input.accept='.json';
+  input.addEventListener('change',()=>{
+    const file=input.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const data=JSON.parse(reader.result);
+        if(!data.history&&!data.days&&!data.prRecords){showToast('Invalid backup file');return}
+        const merge=state.history.length>0&&data.history&&data.history.length>0;
+        if(merge&&!confirm('You have existing data. Import will REPLACE all your data with the backup. Continue?'))return;
+        if(!merge&&!confirm('Restore data from this backup?'))return;
+        if(data.profile){state.profile={...state.profile,...data.profile};store.set('profile',state.profile)}
+        if(data.prRecords){state.prRecords=data.prRecords;store.set('prs',state.prRecords)}
+        if(data.lastWeights){state.lastWeights=data.lastWeights;store.set('lastWeights',state.lastWeights)}
+        if(data.history){state.history=data.history;store.set('history',state.history)}
+        if(data.days){
+          state.days=data.days;store.set('days',state.days);
+          // Also update splits if using multi-split
+          if(state.splits.length>0){state.splits[state.activeSplitIdx].days=data.days;store.set('splits',state.splits)}
+        }
+        if(data.measurements){state.measurements=data.measurements;store.set('measurements',state.measurements)}
+        if(data.supersets){state.supersets=data.supersets;store.set('supersets',state.supersets)}
+        if(data.customExercises){state.customExercises=data.customExercises;store.set('customEx',state.customExercises)}
+        if(data.exerciseNotes){state.exerciseNotes=data.exerciseNotes;store.set('exNotes',state.exerciseNotes)}
+        showToast('Data restored successfully');render();
+      }catch(e){showToast('Error reading file: '+e.message)}
+    };
+    reader.readAsText(file);
+  });
+  input.click();
+}
+
 // ── 1RM Estimator (Epley formula) ──
 function estimate1RM(weight,reps){if(!weight||weight<=0||!reps||reps<=0)return 0;if(reps===1)return weight;return Math.round(weight*(1+reps/30))}
 function get1RMPercentages(e1rm){
@@ -2190,10 +2224,12 @@ function render(){
     barRow.appendChild(barBtns);
     prefSec.appendChild(barRow);
 
-    // JSON Export
+    // JSON Export / Import
     const jsonRow=h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderTop:'1px solid rgba(255,255,255,0.04)'}});
-    jsonRow.appendChild(h('div',{},h('div',{style:{fontSize:'12px',fontWeight:'700',color:'var(--text)'}},'\u{1F4BE} Export JSON'),h('div',{style:{fontSize:'9px',color:'var(--text3)',marginTop:'2px'}},'Full backup of all data')));
-    jsonRow.appendChild(h('button',{style:{padding:'6px 14px',borderRadius:'8px',fontSize:'10px',fontWeight:'800',letterSpacing:'1px',background:'rgba(61,214,140,0.1)',color:'#6a9a5a',border:'1px solid rgba(61,214,140,0.25)'},onClick:()=>exportJSON()},'EXPORT'));
+    jsonRow.appendChild(h('div',{},h('div',{style:{fontSize:'12px',fontWeight:'700',color:'var(--text)'}},'\u{1F4BE} Backup & Restore'),h('div',{style:{fontSize:'9px',color:'var(--text3)',marginTop:'2px'}},'Export or import all your data')));
+    jsonRow.appendChild(h('div',{style:{display:'flex',gap:'6px'}},
+      h('button',{style:{padding:'6px 12px',borderRadius:'8px',fontSize:'10px',fontWeight:'800',letterSpacing:'1px',background:'rgba(106,154,90,0.1)',color:'#6a9a5a',border:'1px solid rgba(106,154,90,0.25)'},onClick:()=>exportJSON()},'EXPORT'),
+      h('button',{style:{padding:'6px 12px',borderRadius:'8px',fontSize:'10px',fontWeight:'800',letterSpacing:'1px',background:'rgba(232,116,10,0.1)',color:'var(--accent)',border:'1px solid rgba(232,116,10,0.25)'},onClick:()=>importJSON()},'IMPORT')));
     prefSec.appendChild(jsonRow);
 
     root.appendChild(prefSec);

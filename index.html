@@ -17,6 +17,32 @@
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 @keyframes slideDown{from{opacity:0;transform:translate(-50%,-16px)}to{opacity:1;transform:translate(-50%,0)}}
 @keyframes loadPulse{0%,100%{opacity:.6}50%{opacity:1}}
+.ember-wrap{position:fixed;bottom:0;left:0;right:0;height:55vh;pointer-events:none;z-index:2;overflow:hidden}
+.ember{position:absolute;bottom:-6px;border-radius:50%;opacity:0;will-change:transform,opacity}
+@-webkit-keyframes ef0{0%{-webkit-transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{-webkit-transform:translateY(-48vh) translateX(12px) scale(.15);opacity:0}}
+@keyframes ef0{0%{transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{transform:translateY(-48vh) translateX(12px) scale(.15);opacity:0}}
+@-webkit-keyframes ef1{0%{-webkit-transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{-webkit-transform:translateY(-42vh) translateX(-8px) scale(.15);opacity:0}}
+@keyframes ef1{0%{transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{transform:translateY(-42vh) translateX(-8px) scale(.15);opacity:0}}
+@-webkit-keyframes ef2{0%{-webkit-transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{-webkit-transform:translateY(-50vh) translateX(18px) scale(.15);opacity:0}}
+@keyframes ef2{0%{transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{transform:translateY(-50vh) translateX(18px) scale(.15);opacity:0}}
+@-webkit-keyframes ef3{0%{-webkit-transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{-webkit-transform:translateY(-44vh) translateX(-14px) scale(.15);opacity:0}}
+@keyframes ef3{0%{transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{transform:translateY(-44vh) translateX(-14px) scale(.15);opacity:0}}
+@-webkit-keyframes ef4{0%{-webkit-transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{-webkit-transform:translateY(-46vh) translateX(10px) scale(.15);opacity:0}}
+@keyframes ef4{0%{transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{transform:translateY(-46vh) translateX(10px) scale(.15);opacity:0}}
+@-webkit-keyframes ef5{0%{-webkit-transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{-webkit-transform:translateY(-40vh) translateX(-20px) scale(.15);opacity:0}}
+@keyframes ef5{0%{transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{transform:translateY(-40vh) translateX(-20px) scale(.15);opacity:0}}
+@-webkit-keyframes ef6{0%{-webkit-transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{-webkit-transform:translateY(-45vh) translateX(6px) scale(.15);opacity:0}}
+@keyframes ef6{0%{transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{transform:translateY(-45vh) translateX(6px) scale(.15);opacity:0}}
+@-webkit-keyframes ef7{0%{-webkit-transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{-webkit-transform:translateY(-43vh) translateX(-10px) scale(.15);opacity:0}}
+@keyframes ef7{0%{transform:translateY(0) translateX(0) scale(1);opacity:0}10%{opacity:1}50%{opacity:.6}100%{transform:translateY(-43vh) translateX(-10px) scale(.15);opacity:0}}
+.e0{left:8%;width:5px;height:5px;background:#ff8c00;box-shadow:0 0 4px 1px rgba(255,140,0,.6);-webkit-animation:ef0 6s 0s ease-out infinite;animation:ef0 6s 0s ease-out infinite}
+.e1{left:22%;width:4px;height:4px;background:#ffaa00;box-shadow:0 0 3px 1px rgba(255,170,0,.5);-webkit-animation:ef1 8s 1.5s ease-out infinite;animation:ef1 8s 1.5s ease-out infinite}
+.e2{left:35%;width:6px;height:6px;background:#ff7700;box-shadow:0 0 5px 2px rgba(255,119,0,.6);-webkit-animation:ef2 5s 3s ease-out infinite;animation:ef2 5s 3s ease-out infinite}
+.e3{left:50%;width:4px;height:4px;background:#ffaa00;box-shadow:0 0 3px 1px rgba(255,170,0,.5);-webkit-animation:ef3 7s 0.5s ease-out infinite;animation:ef3 7s 0.5s ease-out infinite}
+.e4{left:65%;width:5px;height:5px;background:#ff8c00;box-shadow:0 0 4px 1px rgba(255,140,0,.6);-webkit-animation:ef4 9s 2s ease-out infinite;animation:ef4 9s 2s ease-out infinite}
+.e5{left:78%;width:4px;height:4px;background:#ff9500;box-shadow:0 0 3px 1px rgba(255,149,0,.5);-webkit-animation:ef5 6s 4s ease-out infinite;animation:ef5 6s 4s ease-out infinite}
+.e6{left:90%;width:5px;height:5px;background:#ff8c00;box-shadow:0 0 4px 1px rgba(255,140,0,.6);-webkit-animation:ef6 7.5s 1s ease-out infinite;animation:ef6 7.5s 1s ease-out infinite}
+.e7{left:42%;width:4px;height:4px;background:#ffaa00;box-shadow:0 0 3px 1px rgba(255,170,0,.5);-webkit-animation:ef7 6.5s 3.5s ease-out infinite;animation:ef7 6.5s 3.5s ease-out infinite}
 @keyframes prBurst{0%{transform:scale(.8);opacity:0}50%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
 @keyframes timerPulse{0%,100%{box-shadow:0 0 0 0 rgba(232,116,10,.4)}70%{box-shadow:0 0 0 12px rgba(232,116,10,0)}}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -28,7 +54,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent;border:none;c
 .picker-scroll{scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch}.picker-scroll>div{scroll-snap-align:center}
 #app{height:100%;position:relative}
 .bg-noise{position:fixed;inset:0;opacity:.03;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");pointer-events:none;z-index:0;mix-blend-mode:overlay}
-.bg-grad{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 105%,rgba(255,90,0,.06) 0%,rgba(200,60,0,.02) 30%,transparent 60%),radial-gradient(ellipse at 50% -20%,rgba(180,160,140,.03) 0%,transparent 40%);pointer-events:none;z-index:0}
+.bg-grad{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 102%,rgba(255,90,0,.12) 0%,rgba(232,116,10,.06) 15%,rgba(200,60,0,.03) 35%,transparent 60%),radial-gradient(ellipse at 50% -20%,rgba(180,160,140,.03) 0%,transparent 40%);pointer-events:none;z-index:0}
 .page{position:relative;z-index:1;height:100vh;height:100dvh;overflow-y:auto;overflow-x:hidden;padding:calc(16px + var(--safe-t)) 16px calc(60px + var(--safe-b));-webkit-overflow-scrolling:touch}
 .toast{position:fixed;top:calc(20px + var(--safe-t));left:50%;transform:translateX(-50%);background:rgba(20,17,14,.95);border:1px solid var(--border);border-radius:12px;padding:12px 24px;z-index:9999;backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,.6),0 0 20px rgba(255,90,0,.05);animation:slideDown .3s ease}
 .toast span{font-size:14px;font-weight:700;color:var(--text)}
@@ -44,6 +70,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent;border:none;c
 </head>
 <body>
 <div id="app"><div class="bg-noise"></div><div class="bg-grad"></div><div id="root" class="page"></div></div>
+<div class="ember-wrap"><div class="ember e0"></div><div class="ember e1"></div><div class="ember e2"></div><div class="ember e3"></div><div class="ember e4"></div><div class="ember e5"></div><div class="ember e6"></div><div class="ember e7"></div></div>
 <div id="toast-container"></div>
 <script>
 // ═══════════════════════════════════════════════════════════

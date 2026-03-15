@@ -1,4 +1,4 @@
-const CACHE_NAME = 'forge-v31';
+const CACHE_NAME = 'forge-v32';
 const ASSETS = [
   './',
   './index.html',
@@ -18,6 +18,16 @@ self.addEventListener('activate', e => {
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    self.clients.matchAll({type:'window',includeUncontrolled:true}).then(clients => {
+      if(clients.length > 0) return clients[0].focus();
+      return self.clients.openWindow('./');
+    })
   );
 });
 

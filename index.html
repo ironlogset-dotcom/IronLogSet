@@ -2370,17 +2370,38 @@ function render(){
 
     // ── RPE Guide ──
     const rpeSec=h('div',{style:{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'14px',padding:'16px',marginBottom:'16px'}});
-    rpeSec.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'800',letterSpacing:'2px',color:'var(--text3)',marginBottom:'12px'}},'UNDERSTANDING RPE'));
-    rpeSec.appendChild(h('div',{style:{fontSize:'13px',fontWeight:'800',color:'var(--text)',marginBottom:'6px'}},RPE_GUIDE.title));
-    rpeSec.appendChild(h('div',{style:{fontSize:'11px',color:'var(--text2)',lineHeight:'1.6',marginBottom:'12px'}},RPE_GUIDE.desc));
+    rpeSec.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'800',letterSpacing:'2px',color:'var(--text3)',marginBottom:'14px'}},'UNDERSTANDING RPE'));
+    rpeSec.appendChild(h('div',{style:{fontSize:'14px',fontWeight:'800',color:'var(--text)',marginBottom:'4px'}},'Rate of Perceived Exertion'));
+    rpeSec.appendChild(h('div',{style:{fontSize:'12px',color:'var(--text2)',lineHeight:'1.6',marginBottom:'16px'}},'How hard did that set feel? RPE is based on how many reps you had left in the tank.'));
+
+    // Visual scale
     RPE_GUIDE.scale.forEach(s=>{
-      rpeSec.appendChild(h('div',{style:{display:'flex',gap:'10px',alignItems:'flex-start',padding:'6px 0',borderBottom:'1px solid rgba(255,255,255,0.03)'}},
-        h('div',{style:{minWidth:'32px',height:'24px',borderRadius:'6px',background:getRpeColor(s.rpe)+'20',color:getRpeColor(s.rpe),fontSize:'12px',fontWeight:'900',display:'flex',alignItems:'center',justifyContent:'center'}},String(s.rpe)),
-        h('div',{},h('div',{style:{fontSize:'11px',fontWeight:'700',color:'var(--text)'}},s.label),h('div',{style:{fontSize:'10px',color:'var(--text3)',marginTop:'1px'}},s.desc))));
+      const pct=s.rpe*10;
+      rpeSec.appendChild(h('div',{style:{display:'flex',alignItems:'center',gap:'10px',padding:'8px 0',borderBottom:'1px solid rgba(255,255,255,0.04)'}},
+        h('div',{style:{minWidth:'36px',height:'36px',borderRadius:'10px',background:getRpeColor(s.rpe)+'25',color:getRpeColor(s.rpe),fontSize:'15px',fontWeight:'900',display:'flex',alignItems:'center',justifyContent:'center'}},String(s.rpe)),
+        h('div',{style:{flex:'1',minWidth:'0'}},
+          h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'4px'}},
+            h('div',{style:{fontSize:'12px',fontWeight:'800',color:'var(--text)',letterSpacing:'0.5px'}},s.label),
+            h('div',{style:{fontSize:'10px',fontWeight:'600',color:getRpeColor(s.rpe)}},s.rpe>=9?'0-1 left':s.rpe===8?'~2 left':s.rpe===7?'~3 left':s.rpe===6?'~4 left':'5+ left')),
+          h('div',{style:{height:'4px',borderRadius:'2px',background:'rgba(255,255,255,0.06)',overflow:'hidden'}},
+            h('div',{style:{height:'100%',width:`${pct}%`,borderRadius:'2px',background:getRpeColor(s.rpe),transition:'width 0.3s'}})),
+          h('div',{style:{fontSize:'11px',color:'var(--text3)',marginTop:'4px',lineHeight:'1.4'}},s.desc))));
     });
-    rpeSec.appendChild(h('div',{style:{fontSize:'10px',fontWeight:'700',color:'var(--text2)',marginTop:'12px',marginBottom:'4px'}},'HOW TO USE FOR PROGRESSION'));
-    rpeSec.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)',lineHeight:'1.6'}},RPE_GUIDE.howToUse));
-    rpeSec.appendChild(h('div',{style:{fontSize:'10px',color:'var(--text3)',lineHeight:'1.6',marginTop:'8px'}},RPE_GUIDE.progression));
+
+    // Guidance cards
+    const guideCards=[
+      {title:'THE SWEET SPOT',color:'#6a9a5a',text:'Most working sets should land at RPE 7-8. Hard enough to grow, easy enough to recover.'},
+      {title:'TOO HEAVY?',color:'#cc2200',text:'Consistently hitting RPE 9-10? You\'re grinding too hard. Drop the weight 5-10% and build back up.'},
+      {title:'TOO LIGHT?',color:'#7a9ab8',text:'Always at RPE 5-6? Time to add weight. You should feel challenged by your last 2-3 reps.'},
+      {title:'TRACKING PROGRESS',color:'var(--accent)',text:'Same weight feeling easier over time (lower RPE) means you\'re getting stronger. That\'s your cue to increase.'},
+      {title:'AUTO-REGULATE',color:'#c45fff',text:'Bad day? RPE spiking on your usual weight? It\'s fine — adjust down. Good day? Push it. RPE keeps you honest.'},
+    ];
+    rpeSec.appendChild(h('div',{style:{marginTop:'16px'}}));
+    guideCards.forEach(gc=>{
+      rpeSec.appendChild(h('div',{style:{background:gc.color+'10',border:`1px solid ${gc.color}20`,borderRadius:'10px',padding:'12px',marginBottom:'8px'}},
+        h('div',{style:{fontSize:'10px',fontWeight:'800',letterSpacing:'1.5px',color:gc.color,marginBottom:'4px'}},gc.title),
+        h('div',{style:{fontSize:'12px',color:'var(--text2)',lineHeight:'1.5'}},gc.text)));
+    });
     root.appendChild(rpeSec);
 
     // ── Guide Link ──

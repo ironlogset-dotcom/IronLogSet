@@ -2876,6 +2876,7 @@ function logSet(){
   }else{stopRest();finishWorkout()}
 }
 function skipExercise(){
+  stopRest();
   const day=state.selectedDay;
   if(state.exIndex<day.exercises.length-1){
     const next=day.exercises[state.exIndex+1];const nextPr=state.prRecords[next.id];
@@ -2886,7 +2887,7 @@ function skipExercise(){
     let r=lastW?lastW.reps:(nextPr?nextPr.reps:8);
     if(isDeloadActive()&&w>0){const strat=getDeloadStrategy(state.deloadActive.strategy);w=strat.apply(w)}
     state.setWeight=w;state.setReps=r;state.setAssistWeight=0;render();
-  }else{stopRest();finishWorkout()}
+  }else{finishWorkout()}
 }
 function finishWorkout(){
   const day=state.selectedDay;const entries=[];const newPrs={...state.prRecords};let prCount=0;let prList=[];let totalVol=0;

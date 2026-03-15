@@ -489,25 +489,14 @@ function startRest(){
   }
   tick();render();
 }
-function stopRest(){if(state.restInterval){clearTimeout(state.restInterval);state.restInterval=null}state.restActive=false;state.restRemaining=0;state.restEndTime=null;stopBgNotif()}
+function stopRest(){if(state.restInterval){clearTimeout(state.restInterval);state.restInterval=null}state.restActive=false;state.restRemaining=0;state.restEndTime=null}
 
-// ── Background rest notification (live countdown) ──
-let swReg=null;let bgNotifInterval=null;
+// ── Background rest notification (shelved — revisit after native app wrap) ──
+let swReg=null;
 navigator.serviceWorker.ready.then(r=>{swReg=r});
-function updateBgNotif(){
-  if(!swReg||!state.restEndTime)return;
-  const remaining=Math.max(0,Math.ceil((state.restEndTime-Date.now())/1000));
-  if(remaining<=0){clearInterval(bgNotifInterval);bgNotifInterval=null;return}
-  const m=Math.floor(remaining/60);const s=remaining%60;
-  const timeStr=m>0?`${m}:${s.toString().padStart(2,'0')}`:`${s}s`;
-  try{swReg.showNotification('Forge',{body:`Rest timer: ${timeStr} remaining`,icon:'./icon-192.png',tag:'rest-bg',renotify:true,silent:true})}catch(e){}
-}
-function startBgNotif(){if(bgNotifInterval)return;updateBgNotif();bgNotifInterval=setInterval(updateBgNotif,1000)}
-function stopBgNotif(){if(bgNotifInterval){clearInterval(bgNotifInterval);bgNotifInterval=null}}
-document.addEventListener('visibilitychange',()=>{
-  if(document.hidden&&state.restActive){startBgNotif()}
-  else{stopBgNotif()}
-});
+// TODO: Live countdown notification in background. Works partially in PWA but
+// needs native wrapper (Capacitor) for reliable iOS support. Framework is in
+// place: swReg is cached, notificationclick handler exists in sw.js.
 
 // ── CSV Export ──
 function exportCSV(){

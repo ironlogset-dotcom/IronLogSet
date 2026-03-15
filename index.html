@@ -489,18 +489,24 @@ function startRest(){
   }
   tick();render();
 }
-function stopRest(){if(state.restInterval){clearTimeout(state.restInterval);state.restInterval=null}state.restActive=false;state.restRemaining=0;state.restEndTime=null}
+function stopRest(){if(state.restInterval){clearTimeout(state.restInterval);state.restInterval=null}state.restActive=false;state.restRemaining=0;state.restEndTime=null;stopBgNotif()}
 
-// ── Background rest notification (tap to return to app) ──
-let swReg=null;
+// ── Background rest notification (live countdown) ──
+let swReg=null;let bgNotifInterval=null;
 navigator.serviceWorker.ready.then(r=>{swReg=r});
-document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden||!state.restActive||!swReg)return;
-  const remaining=state.restEndTime?Math.max(0,Math.ceil((state.restEndTime-Date.now())/1000)):0;
-  if(remaining<=0)return;
+function updateBgNotif(){
+  if(!swReg||!state.restEndTime)return;
+  const remaining=Math.max(0,Math.ceil((state.restEndTime-Date.now())/1000));
+  if(remaining<=0){clearInterval(bgNotifInterval);bgNotifInterval=null;return}
   const m=Math.floor(remaining/60);const s=remaining%60;
   const timeStr=m>0?`${m}:${s.toString().padStart(2,'0')}`:`${s}s`;
-  try{swReg.showNotification('Forge',{body:`Rest timer: ${timeStr} remaining \u2014 tap to return`,icon:'./icon-192.png',tag:'rest-bg',renotify:true})}catch(e){}
+  try{swReg.showNotification('Forge',{body:`Rest timer: ${timeStr} remaining`,icon:'./icon-192.png',tag:'rest-bg',renotify:true,silent:true})}catch(e){}
+}
+function startBgNotif(){if(bgNotifInterval)return;updateBgNotif();bgNotifInterval=setInterval(updateBgNotif,1000)}
+function stopBgNotif(){if(bgNotifInterval){clearInterval(bgNotifInterval);bgNotifInterval=null}}
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden&&state.restActive){startBgNotif()}
+  else{stopBgNotif()}
 });
 
 // ── CSV Export ──

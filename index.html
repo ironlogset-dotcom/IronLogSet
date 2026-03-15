@@ -193,7 +193,7 @@ const EXERCISE_LIBRARY=[
   {id:'stair_climb',name:'Stair Climber',cat:'Cardio'},{id:'elliptical',name:'Elliptical',cat:'Cardio'},
 ];
 const LIB_CATEGORIES=['Chest','Back','Shoulders','Biceps','Triceps','Legs','Core','Cardio','Custom'];
-const DAY_ICONS=['\u{1F525}','\u{1F4A5}','\u26A1','\u{1F4AA}','\u{1F3CB}','\u2B50','\u{1F680}','\u{1F9E0}','\u2764\uFE0F','\u{1F4A8}','\u{1F94A}','\u{1F3AF}'];
+const DAY_ICONS=[];
 const DAY_COLORS=['#c4883a','#e8740a','#a08040','#c45fff','#ff8500','#ffb800','#8aaa60','#d4864a','#8866ff','#6a9a5a'];
 
 // ── Assisted / Bodyweight Exercises ──
@@ -1281,7 +1281,7 @@ function render(){
       // Today callout
       if(todayWorkout){const tw=todayWorkout;
         root.appendChild(h('button',{style:{width:'100%',background:`linear-gradient(135deg,${tw.color}18,${tw.color}08)`,border:`1px solid ${tw.color}30`,borderRadius:'14px',padding:'16px 18px',textAlign:'left',marginBottom:'16px',display:'flex',alignItems:'center',gap:'14px',animation:'fadeIn 0.4s ease',color:'var(--text)'},onClick:()=>openDay(tw)},
-          h('div',{style:{fontSize:'32px'}},tw.icon),
+          h('div',{style:{width:'40px',height:'40px',borderRadius:'10px',background:tw.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'16px',fontWeight:'900',color:tw.color,flexShrink:'0'}},tw.name.charAt(0)),
           h('div',{style:{flex:'1'}},h('div',{style:{fontSize:'10px',fontWeight:'700',letterSpacing:'2px',color:tw.color,marginBottom:'2px'}},`TODAY \u2014 ${todayWD.toUpperCase()}`),h('div',{style:{fontSize:'16px',fontWeight:'900'}},tw.name),h('div',{style:{fontSize:'11px',color:'var(--text3)',marginTop:'2px'}},`${tw.exercises.length} exercises`)),
           h('div',{style:{fontSize:'22px',color:tw.color}},'\u203A')));
       }
@@ -1296,7 +1296,7 @@ function render(){
         const ct=state.history.filter(w=>w.dayId===day.id).length;
         const isToday=day.weekday===todayWD;
         dayList.appendChild(h('button',{style:{background:isToday?`${day.color}08`:'var(--card)',border:`1px solid ${isToday?day.color+'25':'var(--border)'}`,borderLeft:`4px solid ${day.color}`,borderRadius:'12px',padding:'12px 16px',textAlign:'left',display:'flex',alignItems:'center',gap:'14px',animation:`fadeIn 0.4s ease ${i*80}ms forwards`,opacity:'0',color:'var(--text)'},onClick:()=>openDay(day)},
-          h('div',{style:{fontSize:'26px',width:'36px',textAlign:'center',flexShrink:'0'}},day.icon),
+          h('div',{style:{width:'36px',height:'36px',borderRadius:'8px',background:day.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px',fontWeight:'900',color:day.color,flexShrink:'0'}},day.name.charAt(0)),
           h('div',{style:{flex:'1'}},h('div',{style:{fontSize:'14px',fontWeight:'800',letterSpacing:'1px',color:day.color}},day.name),
             h('div',{style:{fontSize:'10px',color:'var(--text3)',marginTop:'2px'}},h('span',{style:{color:isToday?day.color:'var(--text3)',fontWeight:isToday?'700':'400'}},day.weekday||'Unassigned'),` \u2022 ${day.exercises.length} exercises`)),
           h('div',{style:{fontSize:'11px',fontWeight:'800',borderRadius:'8px',padding:'4px 10px',background:day.colorGlow,color:day.color,flexShrink:'0'}},`${ct}x`)));
@@ -1429,7 +1429,7 @@ function render(){
     WD_SHORT.forEach((wd,i)=>{const full=WEEKDAYS[i];const assigned=days.find(d=>d.weekday===full);const isToday=full===todayWD;
       weekRow.appendChild(h('div',{style:{flex:'1',textAlign:'center',padding:'8px 2px',borderRadius:'8px',background:assigned?`${assigned.color}12`:'var(--card)',border:`1px solid ${isToday?(assigned?assigned.color+'40':'var(--accent)30'):'var(--border)'}`}},
         h('div',{style:{fontSize:'8px',fontWeight:'700',letterSpacing:'1px',color:isToday?'var(--accent)':'var(--text3)',marginBottom:'4px'}},wd),
-        h('div',{style:{fontSize:'10px',fontWeight:'600',color:assigned?assigned.color:'var(--text3)'}},assigned?assigned.icon:'\u2014')))});
+        h('div',{style:{fontSize:'10px',fontWeight:'600',color:assigned?assigned.color:'var(--text3)'}},assigned?assigned.name.charAt(0):'\u2014')))});
     root.appendChild(weekRow);
 
     const list=h('div',{style:{display:'flex',flexDirection:'column',gap:'8px'}});
@@ -1441,7 +1441,7 @@ function render(){
       arrows.appendChild(h('button',{style:{background:'none',color:i===0?'var(--border)':'var(--text3)',fontSize:'16px',padding:'0',lineHeight:'1'},onClick:()=>{if(i>0){const a=[...days];const[it]=a.splice(i,1);a.splice(i-1,0,it);state.days=a;save();render()}}},'\u25B2'));
       arrows.appendChild(h('button',{style:{background:'none',color:i===days.length-1?'var(--border)':'var(--text3)',fontSize:'16px',padding:'0',lineHeight:'1'},onClick:()=>{if(i<days.length-1){const a=[...days];const[it]=a.splice(i,1);a.splice(i+1,0,it);state.days=a;save();render()}}},'\u25BC'));
       row.appendChild(arrows);
-      row.appendChild(h('div',{style:{fontSize:'24px',flexShrink:'0'}},day.icon));
+      row.appendChild(h('div',{style:{width:'32px',height:'32px',borderRadius:'8px',background:day.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'13px',fontWeight:'900',color:day.color,flexShrink:'0'}},day.name.charAt(0)));
       row.appendChild(h('div',{style:{flex:'1'}},h('div',{style:{fontSize:'13px',fontWeight:'800',color:day.color}},day.name),h('div',{style:{fontSize:'10px',color:'var(--text3)',marginTop:'1px'}},`${day.exercises.length} exercises`)));
       row.appendChild(h('button',{style:{background:day.weekday?`${day.color}15`:'var(--bg2)',border:`1px solid ${day.weekday?day.color+'30':'var(--border)'}`,borderRadius:'8px',padding:'6px 12px',fontSize:'10px',fontWeight:'700',color:day.weekday?day.color:'var(--text3)',letterSpacing:'1px',minWidth:'52px',textAlign:'center'},onClick:()=>{state.editWeekday=state.editWeekday===i?null:i;render()}},day.weekday?day.weekday.slice(0,3).toUpperCase():'SET'));
       row.appendChild(h('button',{style:{width:'32px',height:'32px',borderRadius:'8px',background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px',flexShrink:'0'},onClick:()=>{state.editDayIdx=i;state.view='editday';render()}},'\u270F\uFE0F'));
@@ -1451,7 +1451,7 @@ function render(){
         WEEKDAYS.forEach(wd=>{const taken=days.find((d,di)=>di!==i&&d.weekday===wd);const isSel=day.weekday===wd;
           const btn=h('button',{style:{padding:'8px 12px',borderRadius:'8px',fontSize:'11px',fontWeight:isSel?'800':'600',cursor:taken?'not-allowed':'pointer',opacity:taken?'0.3':'1',background:isSel?day.color:'var(--bg2)',color:isSel?'#fff':(taken?'var(--text3)':'var(--text2)'),border:`1px solid ${isSel?day.color:'var(--border)'}`,transition:'all 0.15s'},
             onClick:()=>{if(!taken||isSel){state.days[i]={...state.days[i],weekday:wd};state.editWeekday=null;save();showToast(`${day.name} \u2192 ${wd}`);render()}}},wd.slice(0,3));
-          if(taken&&!isSel)btn.appendChild(h('span',{style:{fontSize:'8px',marginLeft:'4px'}},`(${taken.icon})`));
+          if(taken&&!isSel)btn.appendChild(h('span',{style:{fontSize:'8px',marginLeft:'4px'}},`(${taken.name.charAt(0)})`));
           picker.appendChild(btn)});
         picker.appendChild(h('button',{style:{padding:'8px 12px',borderRadius:'8px',fontSize:'11px',fontWeight:'600',background:'rgba(232,116,10,0.08)',color:'var(--accent)',border:'1px solid rgba(232,116,10,0.2)'},onClick:()=>{state.days[i]={...state.days[i],weekday:null};state.editWeekday=null;save();showToast('Day unassigned');render()}},'Clear'));
         card.appendChild(picker);
@@ -1462,7 +1462,7 @@ function render(){
     // Add new day button
     root.appendChild(h('button',{style:{width:'100%',marginTop:'12px',padding:'14px',borderRadius:'12px',border:'2px dashed var(--border)',background:'transparent',color:'var(--text3)',fontSize:'13px',fontWeight:'700',letterSpacing:'1px',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'},
       onClick:()=>{
-        const newDay={id:genDayId(),name:'NEW DAY',icon:'\u2B50',color:'#ffb800',colorGlow:'rgba(255,184,0,0.12)',weekday:null,exercises:[]};
+        const newDay={id:genDayId(),name:'NEW DAY',icon:'',color:'#ffb800',colorGlow:'rgba(255,184,0,0.12)',weekday:null,exercises:[]};
         state.days.push(newDay);save();
         state.editDayIdx=state.days.length-1;state.view='editday';render();
       }},'+  ADD DAY'));
@@ -1484,13 +1484,6 @@ function render(){
     nameInput.addEventListener('input',()=>{state.days[dayIdx].name=nameInput.value.toUpperCase();save()});
     root.appendChild(nameInput);
 
-    // Icon picker
-    root.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'700',letterSpacing:'2px',color:'var(--text3)',marginBottom:'6px'}},'ICON'));
-    const iconRow=h('div',{style:{display:'flex',gap:'8px',flexWrap:'wrap',marginBottom:'16px'}});
-    DAY_ICONS.forEach(icon=>{const active=day.icon===icon;
-      iconRow.appendChild(h('button',{style:{width:'40px',height:'40px',borderRadius:'10px',fontSize:'20px',display:'flex',alignItems:'center',justifyContent:'center',background:active?`${day.color}20`:'var(--card)',border:`1px solid ${active?day.color+'40':'var(--border)'}`,transition:'all 0.15s'},
-        onClick:()=>{state.days[dayIdx].icon=icon;save();render()}},icon))});
-    root.appendChild(iconRow);
 
     // Color picker
     root.appendChild(h('div',{style:{fontSize:'9px',fontWeight:'700',letterSpacing:'2px',color:'var(--text3)',marginBottom:'6px'}},'COLOR'));
@@ -1647,7 +1640,7 @@ function render(){
         cc>0?h('button',{style:{borderRadius:'10px',padding:'8px 16px',color:'#fff',fontSize:'12px',fontWeight:'800',background:day.color},onClick:()=>finishWorkout()},'END WORKOUT'):null)));
 
     root.appendChild(h('div',{style:{fontSize:'20px',fontWeight:'900',letterSpacing:'2px',color:day.color,marginBottom:'4px',display:'flex',alignItems:'center',justifyContent:'space-between'}},
-      h('div',{style:{display:'flex',alignItems:'center'}},h('span',{style:{marginRight:'10px',fontSize:'26px'}},day.icon),day.name),
+      h('div',{style:{display:'flex',alignItems:'center'}},h('div',{style:{width:'36px',height:'36px',borderRadius:'8px',background:day.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px',fontWeight:'900',color:day.color,marginRight:'10px',flexShrink:'0'}},day.name.charAt(0)),day.name),
       h('button',{style:{background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',borderRadius:'8px',padding:'4px 10px',fontSize:'10px',fontWeight:'600',color:'var(--text3)',display:'flex',alignItems:'center',gap:'4px'},
         onClick:()=>{const idx=state.days.findIndex(d=>d.id===day.id);if(idx>=0){state.editDayIdx=idx;state.view='editday';render()}}},'\u270F\uFE0F Edit')));
     root.appendChild(h('div',{style:{fontSize:'11px',color:'var(--text3)',marginBottom:'12px'}},day.weekday?`${day.weekday} \u2022 `:'','Tap an exercise to start logging.'));
@@ -2149,7 +2142,7 @@ function render(){
         const card=h('button',{style:{background:'var(--card)',border:'1px solid var(--border)',borderLeft:`3px solid ${s.dayColor||'#555'}`,borderRadius:'12px',padding:'12px 16px',textAlign:'left',animation:`fadeIn 0.3s ease ${Math.min(i,12)*30}ms forwards`,opacity:'0',color:'var(--text)',width:'100%'},onClick:()=>{state.expandedSession=state.expandedSession===i?null:i;render()}},
           h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
             h('div',{style:{display:'flex',alignItems:'center',gap:'8px'}},
-              h('span',{},s.dayIcon||''),
+              h('div',{style:{width:'24px',height:'24px',borderRadius:'6px',background:(s.dayColor||'#555')+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'10px',fontWeight:'900',color:s.dayColor||'#555',flexShrink:'0'}},s.dayName?s.dayName.charAt(0):''),
               h('span',{style:{fontSize:'13px',fontWeight:'800',letterSpacing:'1px',color:s.dayColor||'#aaa'}},s.dayName),
               isActivity?h('span',{style:{fontSize:'9px',fontWeight:'700',borderRadius:'5px',padding:'2px 6px',background:'rgba(255,133,0,0.15)',color:'#ff8500'}},`${s.duration}min`):null,
               s.workoutDuration?h('span',{style:{fontSize:'9px',fontWeight:'700',borderRadius:'5px',padding:'2px 6px',background:'rgba(136,102,255,0.15)',color:'#8866ff'}},fmtDuration(s.workoutDuration)):null,
@@ -2900,7 +2893,7 @@ function render(){
           showToast(`${tmpl.name} added to your split`);
           state.view='home';render();
         }},
-        h('div',{style:{fontSize:'28px',width:'40px',textAlign:'center',flexShrink:'0'}},tmpl.icon),
+        h('div',{style:{width:'40px',height:'40px',borderRadius:'10px',background:tmpl.color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'16px',fontWeight:'900',color:tmpl.color,flexShrink:'0'}},tmpl.name.charAt(0)),
         h('div',{style:{flex:'1'}},
           h('div',{style:{fontSize:'13px',fontWeight:'800',color:tmpl.color,marginBottom:'2px'}},tmpl.name),
           h('div',{style:{fontSize:'11px',color:'var(--text2)',marginBottom:'3px'}},tmpl.desc),

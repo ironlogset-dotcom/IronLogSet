@@ -340,6 +340,108 @@ const PROGRAM_TEMPLATES=[
     ]},
 ];
 
+// ── Template Days (individual pre-built days to add to any split) ──
+const TEMPLATE_DAYS=[
+  {id:'td_push',name:'PUSH DAY',desc:'Chest, Shoulders, Triceps',icon:'\u{1F4AA}',color:'#e8740a',colorGlow:'rgba(232,116,10,0.12)',
+    exercises:[
+      {id:'bb_bench',name:'Barbell Bench Press',sub:'',sets:4,repRange:'6-8'},
+      {id:'incline_db',name:'Incline DB Press',sub:'',sets:3,repRange:'8-10'},
+      {id:'cable_fly',name:'Cable Fly',sub:'',sets:3,repRange:'12-15'},
+      {id:'db_ohp',name:'DB Shoulder Press',sub:'',sets:3,repRange:'8-10'},
+      {id:'lat_raise',name:'Lateral Raises',sub:'',sets:3,repRange:'15-20'},
+      {id:'tri_pushdown',name:'Tricep Pushdowns',sub:'',sets:3,repRange:'12-15'},
+      {id:'tri_overhead',name:'Overhead Tricep Extension',sub:'',sets:3,repRange:'12-15'},
+    ]},
+  {id:'td_pull',name:'PULL DAY',desc:'Back, Biceps, Rear Delts',icon:'\u{1F525}',color:'#c4883a',colorGlow:'rgba(196,136,58,0.12)',
+    exercises:[
+      {id:'pullups',name:'Pull-Ups',sub:'',sets:4,repRange:'6-10'},
+      {id:'bb_row',name:'Barbell Row',sub:'',sets:4,repRange:'6-8'},
+      {id:'lat_pulldown',name:'Lat Pulldown',sub:'',sets:3,repRange:'10-12'},
+      {id:'cable_row',name:'Cable Row',sub:'',sets:3,repRange:'10-12'},
+      {id:'face_pull',name:'Face Pulls',sub:'',sets:3,repRange:'15-20'},
+      {id:'bb_curl',name:'Barbell Curl',sub:'',sets:3,repRange:'8-10'},
+      {id:'hammer_curl',name:'Hammer Curls',sub:'',sets:3,repRange:'10-12'},
+    ]},
+  {id:'td_legs_quad',name:'LEGS (QUAD FOCUS)',desc:'Squats, Leg Press, Extensions',icon:'\u26A1',color:'#6a9a5a',colorGlow:'rgba(106,154,90,0.12)',
+    exercises:[
+      {id:'squat',name:'Barbell Squat',sub:'',sets:4,repRange:'5-8'},
+      {id:'leg_press',name:'Leg Press',sub:'',sets:3,repRange:'10-12'},
+      {id:'bss',name:'Bulgarian Split Squat',sub:'',sets:3,repRange:'8-10'},
+      {id:'leg_ext',name:'Leg Extension',sub:'',sets:3,repRange:'12-15'},
+      {id:'walking_lunge',name:'Walking Lunges',sub:'',sets:3,repRange:'10-12'},
+      {id:'calf_raise',name:'Calf Raises',sub:'',sets:4,repRange:'15-20'},
+    ]},
+  {id:'td_legs_ham',name:'LEGS (HAM & GLUTE)',desc:'Deadlifts, Hip Thrusts, Curls',icon:'\u26A1',color:'#8aaa60',colorGlow:'rgba(138,170,96,0.12)',
+    exercises:[
+      {id:'rdl',name:'Romanian Deadlift',sub:'',sets:4,repRange:'6-8'},
+      {id:'hip_thrust',name:'Hip Thrust',sub:'',sets:4,repRange:'8-10'},
+      {id:'ham_curl',name:'Hamstring Curl',sub:'',sets:3,repRange:'10-12'},
+      {id:'leg_curl_seated',name:'Seated Leg Curl',sub:'',sets:3,repRange:'12-15'},
+      {id:'goblet_squat',name:'Goblet Squat',sub:'',sets:3,repRange:'10-12'},
+      {id:'calf_raise',name:'Calf Raises',sub:'',sets:4,repRange:'15-20'},
+    ]},
+  {id:'td_upper',name:'UPPER BODY',desc:'Chest, Back, Shoulders, Arms',icon:'\u{1F4A5}',color:'#ff8500',colorGlow:'rgba(255,133,0,0.12)',
+    exercises:[
+      {id:'db_bench',name:'DB Bench Press',sub:'',sets:3,repRange:'6-8'},
+      {id:'cs_row',name:'Chest-Supported Row',sub:'',sets:3,repRange:'8-10'},
+      {id:'db_ohp',name:'DB Shoulder Press',sub:'',sets:3,repRange:'8-10'},
+      {id:'lat_pulldown',name:'Lat Pulldown',sub:'',sets:3,repRange:'10-12'},
+      {id:'lat_raise',name:'Lateral Raises',sub:'',sets:3,repRange:'12-15'},
+      {id:'bb_curl',name:'Barbell Curl',sub:'',sets:2,repRange:'10-12'},
+      {id:'tri_pushdown',name:'Tricep Pushdowns',sub:'',sets:2,repRange:'10-12'},
+    ]},
+  {id:'td_lower',name:'LOWER BODY',desc:'Squats, Deadlifts, Accessories',icon:'\u{1F3CB}',color:'#c45fff',colorGlow:'rgba(196,95,255,0.12)',
+    exercises:[
+      {id:'squat',name:'Barbell Squat',sub:'',sets:4,repRange:'5-8'},
+      {id:'rdl',name:'Romanian Deadlift',sub:'',sets:3,repRange:'8-10'},
+      {id:'leg_press',name:'Leg Press',sub:'',sets:3,repRange:'10-12'},
+      {id:'ham_curl',name:'Hamstring Curl',sub:'',sets:3,repRange:'12-15'},
+      {id:'leg_ext',name:'Leg Extension',sub:'',sets:3,repRange:'12-15'},
+      {id:'calf_raise',name:'Calf Raises',sub:'',sets:3,repRange:'15-20'},
+    ]},
+  {id:'td_full_body',name:'FULL BODY',desc:'Hit everything in one session',icon:'\u2B50',color:'#ffb800',colorGlow:'rgba(255,184,0,0.12)',
+    exercises:[
+      {id:'squat',name:'Barbell Squat',sub:'',sets:3,repRange:'5-8'},
+      {id:'db_bench',name:'DB Bench Press',sub:'',sets:3,repRange:'8-10'},
+      {id:'cs_row',name:'Chest-Supported Row',sub:'',sets:3,repRange:'8-10'},
+      {id:'db_ohp',name:'DB Shoulder Press',sub:'',sets:3,repRange:'8-10'},
+      {id:'rdl',name:'Romanian Deadlift',sub:'',sets:3,repRange:'8-10'},
+      {id:'bb_curl',name:'Barbell Curl',sub:'',sets:2,repRange:'10-12'},
+      {id:'tri_pushdown',name:'Tricep Pushdowns',sub:'',sets:2,repRange:'10-12'},
+    ]},
+  {id:'td_arms',name:'ARMS & ABS',desc:'Biceps, Triceps, Core',icon:'\u{1F94A}',color:'#d4864a',colorGlow:'rgba(212,134,74,0.12)',
+    exercises:[
+      {id:'bb_curl',name:'Barbell Curl',sub:'',sets:3,repRange:'8-10'},
+      {id:'skull_crush',name:'Skull Crushers',sub:'',sets:3,repRange:'8-10'},
+      {id:'hammer_curl',name:'Hammer Curls',sub:'',sets:3,repRange:'10-12'},
+      {id:'tri_overhead',name:'Overhead Tricep Extension',sub:'',sets:3,repRange:'10-12'},
+      {id:'preacher_curl',name:'Preacher Curls',sub:'',sets:3,repRange:'10-12'},
+      {id:'tri_pushdown',name:'Tricep Pushdowns',sub:'',sets:3,repRange:'12-15'},
+      {id:'hanging_leg_raise',name:'Hanging Leg Raise',sub:'',sets:3,repRange:'10-15'},
+      {id:'cable_crunch',name:'Cable Crunch',sub:'',sets:3,repRange:'12-15'},
+    ]},
+  {id:'td_shoulders',name:'SHOULDER BUILDER',desc:'All three delt heads',icon:'\u{1F680}',color:'#8866ff',colorGlow:'rgba(136,102,255,0.12)',
+    exercises:[
+      {id:'bb_ohp',name:'Barbell OHP',sub:'',sets:4,repRange:'5-8'},
+      {id:'db_ohp',name:'DB Shoulder Press',sub:'',sets:3,repRange:'8-10'},
+      {id:'lat_raise',name:'Lateral Raises',sub:'',sets:4,repRange:'12-15'},
+      {id:'cable_lat_raise',name:'Cable Lateral Raise',sub:'',sets:3,repRange:'15-20'},
+      {id:'rear_delt_fly',name:'Rear Delt Fly',sub:'',sets:3,repRange:'15-20'},
+      {id:'face_pull',name:'Face Pulls',sub:'',sets:3,repRange:'15-20'},
+      {id:'shrugs',name:'Shrugs',sub:'',sets:3,repRange:'10-12'},
+    ]},
+  {id:'td_back_rear',name:'BACK & REAR DELTS',desc:'Width, thickness, rear delts',icon:'\u{1F3AF}',color:'#00c9db',colorGlow:'rgba(0,201,219,0.12)',
+    exercises:[
+      {id:'pullups',name:'Pull-Ups',sub:'',sets:4,repRange:'6-10'},
+      {id:'bb_row',name:'Barbell Row',sub:'',sets:4,repRange:'6-8'},
+      {id:'lat_pulldown',name:'Lat Pulldown',sub:'',sets:3,repRange:'10-12'},
+      {id:'db_row',name:'Dumbbell Row',sub:'',sets:3,repRange:'8-10'},
+      {id:'sa_pulldown',name:'Straight-Arm Pulldown',sub:'',sets:3,repRange:'12-15'},
+      {id:'rear_delt_fly',name:'Rear Delt Fly',sub:'',sets:3,repRange:'15-20'},
+      {id:'face_pull',name:'Face Pulls',sub:'',sets:3,repRange:'15-20'},
+    ]},
+];
+
 // ── State ──
 let state={
   view:'home',days:null,selectedDay:null,exIndex:0,currentSet:1,
@@ -1132,6 +1234,10 @@ function render(){
           }
           menu.appendChild(row);
         });
+        // Template Days button
+        menu.appendChild(h('div',{style:{borderTop:'1px solid var(--border)',margin:'6px 0 2px'}}));
+        menu.appendChild(h('button',{style:{width:'100%',padding:'10px',borderRadius:'8px',background:'rgba(232,116,10,0.06)',color:'var(--accent)',fontSize:'11px',fontWeight:'700',letterSpacing:'1px',textAlign:'center'},
+          onClick:()=>{state.splitMenuOpen=false;state.view='templateDays';render()}},'\u{1F4CB} ADD TEMPLATE DAY'));
         root.appendChild(menu);
       }
     }
@@ -2771,6 +2877,37 @@ function render(){
     });
     root.appendChild(h('button',{style:{width:'100%',padding:'14px',borderRadius:'14px',background:'rgba(255,133,0,0.1)',border:'1px solid rgba(255,133,0,0.3)',color:'#ff8500',fontSize:'13px',fontWeight:'800',letterSpacing:'1px',marginTop:'8px'},
       onClick:()=>{state.deloadDismiss=new Date().toISOString();store.set('deloadDismiss',state.deloadDismiss);state.view='home';render()}},'GOT IT \u2014 DISMISS FOR 7 DAYS'));
+    return;
+  }
+
+  // ═══════════════ TEMPLATE DAYS ═══════════════
+  if(state.view==='templateDays'){
+    root.appendChild(h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'20px'}},
+      h('button',{style:{background:'none',color:'var(--text2)',fontSize:'14px',fontWeight:'600',padding:'8px 0'},onClick:()=>{state.view='home';render()}},'\u2190 Back'),
+      h('div',{style:{fontSize:'12px',fontWeight:'800',letterSpacing:'3px',color:'var(--text2)'}},'TEMPLATE DAYS'),
+      h('div',{style:{width:'50px'}})));
+    root.appendChild(h('div',{style:{fontSize:'11px',color:'var(--text3)',textAlign:'center',marginBottom:'16px',lineHeight:'1.5'}},'Tap a template to add it to your current split. Exercises with existing data will auto-load your last weights.'));
+    TEMPLATE_DAYS.forEach((tmpl,i)=>{
+      const exCount=tmpl.exercises.length;
+      const card=h('button',{style:{width:'100%',display:'flex',alignItems:'center',gap:'14px',padding:'14px 16px',background:'var(--card)',border:`1px solid ${tmpl.color}25`,borderRadius:'14px',marginBottom:'10px',textAlign:'left',color:'var(--text)',animation:`fadeIn 0.3s ease ${i*40}ms forwards`,opacity:'0'},
+        onClick:()=>{
+          const newDay={...tmpl,exercises:tmpl.exercises.map(e=>({...e}))};
+          delete newDay.desc;
+          if(!newDay.weekday)newDay.weekday='';
+          state.days.push(newDay);
+          if(state.splits.length>0)state.splits[state.activeSplitIdx].days=state.days;
+          save();
+          showToast(`${tmpl.name} added to your split`);
+          state.view='home';render();
+        }},
+        h('div',{style:{fontSize:'28px',width:'40px',textAlign:'center',flexShrink:'0'}},tmpl.icon),
+        h('div',{style:{flex:'1'}},
+          h('div',{style:{fontSize:'13px',fontWeight:'800',color:tmpl.color,marginBottom:'2px'}},tmpl.name),
+          h('div',{style:{fontSize:'11px',color:'var(--text2)',marginBottom:'3px'}},tmpl.desc),
+          h('div',{style:{fontSize:'10px',color:'var(--text3)'}},`${exCount} exercises`)),
+        h('div',{style:{fontSize:'18px',color:'var(--text3)',flexShrink:'0'}},'+'));
+      root.appendChild(card);
+    });
     return;
   }
 }
